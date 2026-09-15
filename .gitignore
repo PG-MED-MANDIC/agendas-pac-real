@@ -1,0 +1,19 @@
+# Segredos -- nunca versionar (token da ConsultaJá)
+pipeline/.env
+
+# Ambiente virtual Python (recriável via pipeline/requirements.txt)
+pipeline/.venv/
+
+# Log local do atualizador -- fica só na sua máquina
+pipeline/atualizacoes.log
+
+# Planilha bruta baixada da API -- tem nome/celular de paciente, nunca
+# versionar nem hospedar
+dados-fonte/
+
+# Cache Python (também coberto por pipeline/.gitignore)
+pipeline/__pycache__/
+*.pyc
+
+# Configuração pessoal de editor
+.vscode/
