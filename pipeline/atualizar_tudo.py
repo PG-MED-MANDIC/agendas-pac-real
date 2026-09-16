@@ -28,7 +28,7 @@ import pandas as pd
 from config import DADOS_FONTE_DIR, INDEX_HTML_PATH, PIPELINE_DIR
 from consultaja_client import ConsultaJaConfigurationError
 from fetch_consultaja import fetch_and_save
-from render_index import upsert_all
+from render_index import upsert_all, upsert_last_update
 from transform_triagem import build_daycnt, build_raw, build_rawd, build_rawh
 
 LOG_PATH = PIPELINE_DIR / "atualizacoes.log"
@@ -91,6 +91,7 @@ def main() -> int:
             "DAYCNT": build_daycnt(df),
         }
         upsert_all(INDEX_HTML_PATH, data)
+        upsert_last_update(INDEX_HTML_PATH, f"{datetime.now():%d/%m/%Y %H:%M}")
     except Exception:
         report.append("  FALHOU: erro ao processar/gravar os dados. Detalhes:")
         report.append(traceback.format_exc())

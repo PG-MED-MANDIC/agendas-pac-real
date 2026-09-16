@@ -17,6 +17,16 @@ from pathlib import Path
 
 NAMES = ("RAW", "RAWD", "RAWH", "DAYCNT")
 
+_LAST_UPDATE_RE = re.compile(r'(<div id="last-update"[^>]*>)[^<]*(</div>)')
+
+
+def upsert_last_update(html_path: Path, label: str) -> None:
+    text = html_path.read_text(encoding="utf-8", newline="")
+    new_text, n = _LAST_UPDATE_RE.subn(rf"\g<1>{label}\g<2>", text, count=1)
+    if n == 0:
+        raise RuntimeError('Não encontrei \'<div id="last-update">\' no index.html.')
+    html_path.write_text(new_text, encoding="utf-8", newline="")
+
 
 def _upsert_var(lines: list[str], name: str, value) -> list[str]:
     pattern = re.compile(rf"^var {name}=.*;")
