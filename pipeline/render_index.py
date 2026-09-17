@@ -17,7 +17,7 @@ from pathlib import Path
 
 NAMES = ("RAW", "RAWD", "RAWH", "DAYCNT")
 
-_LAST_UPDATE_RE = re.compile(r'(<div id="last-update"[^>]*>)[^<]*(</div>)')
+_LAST_UPDATE_RE = re.compile(r'(<div[^>]*\bid="last-update"[^>]*>)[^<]*(</div>)')
 
 
 def upsert_last_update(html_path: Path, label: str) -> None:
