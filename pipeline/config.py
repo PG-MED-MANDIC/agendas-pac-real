@@ -31,6 +31,11 @@ PROJECT_DIR = PIPELINE_DIR.parent
 INDEX_HTML_PATH = PROJECT_DIR / "index.html"
 DADOS_FONTE_DIR = PROJECT_DIR.parent / "dados-fonte"
 
+# Mesmo arquivo usado pelo pipeline de agendas_pgmed (capacidade planejada
+# das práticas) -- baixado manualmente do SharePoint, nunca por este
+# pipeline. Usado só pela aba "Slots x Realizado" (ver transform_slots.py).
+CHECKLIST_XLSX_PATH = DADOS_FONTE_DIR / "checklist-captacao.xlsx"
+
 
 @dataclass(frozen=True)
 class ConsultaJaConfig:

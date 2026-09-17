@@ -1,6 +1,6 @@
 """Orquestra a atualização do dashboard Triagem: obtém a base de
 agendamentos da ConsultaJá (mesma conta usada no pipeline do NPS-PACIENTE)
-e regrava RAW/RAWD/RAWH/DAYCNT em ../index.html. Um comando só:
+e regrava RAW/RAWD/RAWH/DAYCNT/SLOTS em ../index.html. Um comando só:
 
     python pipeline/atualizar_tudo.py
 
@@ -9,6 +9,15 @@ baixada -- por este pipeline ou pelo pipeline do NPS-PACIENTE (repositório
 vizinho, mesma pasta dados-fonte/ compartilhada, ver config.py) -- assim as
 duas atualizações não baixam a mesma base duas vezes. Se quiser forçar um
 download novo, apague a planilha do dia em dados-fonte/ antes de rodar.
+
+SLOTS (capacidade planejada, usada só pela aba "Slots x Realizado") vem de
+dados-fonte/checklist-captacao.xlsx -- ver transform_slots.py. Se esse
+arquivo não existir, o pipeline segue em frente sem tocar em SLOTS (o que
+já está publicado continua valendo, com aviso) em vez de falhar tudo --
+mas nesse caso o "Última atualização" do dashboard NÃO avança (decisão de
+2026-09-17): esse indicador só deve dizer que aconteceu quando os dois
+dados-fonte (ConsultaJá E checklist-captacao) foram conferidos na mesma
+rodada, nunca quando só um dos dois rodou.
 
 Não faz git add/commit/push -- isso continua manual de propósito (ver
 README.md), pra sempre ter uma revisão humana antes de publicar no
@@ -25,10 +34,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from config import DADOS_FONTE_DIR, INDEX_HTML_PATH, PIPELINE_DIR
+from config import CHECKLIST_XLSX_PATH, DADOS_FONTE_DIR, INDEX_HTML_PATH, PIPELINE_DIR
 from consultaja_client import ConsultaJaConfigurationError
 from fetch_consultaja import fetch_and_save
 from render_index import upsert_all, upsert_last_update
+from transform_slots import build_slots
 from transform_triagem import build_daycnt, build_raw, build_rawd, build_rawh
 
 LOG_PATH = PIPELINE_DIR / "atualizacoes.log"
@@ -50,7 +60,7 @@ def _planilha_de_hoje() -> Path | None:
 def main() -> int:
     report: list[str] = []
 
-    report.append("PASSO 1/2 -- obter a base de agendamentos da ConsultaJá")
+    report.append("PASSO 1/3 -- obter a base de agendamentos da ConsultaJá")
     existing = _planilha_de_hoje()
     if existing is not None:
         output_path = existing
@@ -81,7 +91,7 @@ def main() -> int:
             "(compartilhada com o pipeline do NPS-PACIENTE)."
         )
 
-    report.append("\nPASSO 2/2 -- recalcular RAW/RAWD/RAWH/DAYCNT")
+    report.append("\nPASSO 2/3 -- recalcular RAW/RAWD/RAWH/DAYCNT")
     try:
         df = pd.read_excel(output_path)
         data = {
@@ -90,10 +100,8 @@ def main() -> int:
             "RAWH": build_rawh(df),
             "DAYCNT": build_daycnt(df),
         }
-        upsert_all(INDEX_HTML_PATH, data)
-        upsert_last_update(INDEX_HTML_PATH, f"{datetime.now():%d/%m/%Y %H:%M}")
     except Exception:
-        report.append("  FALHOU: erro ao processar/gravar os dados. Detalhes:")
+        report.append("  FALHOU: erro ao processar os dados da ConsultaJá. Detalhes:")
         report.append(traceback.format_exc())
         _log(report)
         return 1
@@ -104,6 +112,50 @@ def main() -> int:
         f"{len(data['RAWH'])} combinações de hora · "
         f"{len(data['DAYCNT'])} combinações mês/semana."
     )
+
+    report.append("\nPASSO 3/3 -- recalcular SLOTS (capacidade planejada, aba \"Slots x Realizado\")")
+    slots_ok = False
+    if not CHECKLIST_XLSX_PATH.exists():
+        report.append(
+            f"  Aviso: {CHECKLIST_XLSX_PATH.relative_to(DADOS_FONTE_DIR.parent)} não existe -- "
+            'SLOTS não foi recalculado (o que já está publicado em index.html continua valendo). '
+            "Baixe checklist-captacao.xlsx do SharePoint (mesmo arquivo do pipeline de agendas_pgmed) "
+            "e salve nesse caminho pra atualizar Slots também."
+        )
+    else:
+        try:
+            slots_warnings: list[str] = []
+            data["SLOTS"] = build_slots(CHECKLIST_XLSX_PATH, df, warnings=slots_warnings)
+            slots_ok = True
+        except Exception:
+            report.append("  FALHOU: erro ao processar Slots. Detalhes:")
+            report.append(traceback.format_exc())
+            _log(report)
+            return 1
+        report.append(f"  OK -- {len(data['SLOTS'])} combinações unidade/curso/turma/data com slots previstos.")
+        if slots_warnings:
+            report.append("  Avisos (revisar manualmente):")
+            report.extend(f"    - {w}" for w in slots_warnings)
+
+    try:
+        upsert_all(INDEX_HTML_PATH, data)
+        # "Última atualização" só avança quando o passo 1 (ConsultaJá) E o
+        # passo 3 (checklist-captacao/SLOTS) rodaram os dois com sucesso --
+        # nunca quando só um dos dois aconteceu (decisão de 2026-09-17: o
+        # indicador existe pra dizer "os dois dados-fonte foram conferidos
+        # nesta rodada", não só "o script rodou").
+        if slots_ok:
+            upsert_last_update(INDEX_HTML_PATH, f"{datetime.now():%d/%m/%Y %H:%M}")
+        else:
+            report.append(
+                '  "Última atualização" NÃO foi alterada -- só avança quando SLOTS '
+                "(checklist-captacao) também é recalculado com sucesso na mesma rodada."
+            )
+    except Exception:
+        report.append("  FALHOU: erro ao gravar index.html. Detalhes:")
+        report.append(traceback.format_exc())
+        _log(report)
+        return 1
     report.append(
         "\nTudo certo. Próximos passos (revise antes de publicar):\n"
         "  git status\n"

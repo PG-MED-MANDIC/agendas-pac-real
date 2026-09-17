@@ -1,6 +1,6 @@
-"""Regrava as 4 constantes de dados (`var RAW`, `var RAWD`, `var RAWH`,
-`var DAYCNT`) dentro de ../index.html, preservando todo o resto do arquivo
-(HTML, CSS, lógica de gráficos/filtros) intocado.
+"""Regrava as constantes de dados (`var RAW`, `var RAWD`, `var RAWH`,
+`var DAYCNT`, `var SLOTS`) dentro de ../index.html, preservando todo o
+resto do arquivo (HTML, CSS, lógica de gráficos/filtros) intocado.
 
 Diferente do render_script.py do NPS-PACIENTE (que assume um bloco de
 `const` isolado no topo do arquivo), aqui os `var` ficam no meio de um
@@ -8,6 +8,9 @@ Diferente do render_script.py do NPS-PACIENTE (que assume um bloco de
 localizada pela linha exata onde já está e substituída ali mesmo, nunca
 inserida em lugar novo (evita quebrar a ordem de dependência com
 CURSOS/MESES, que são calculados a partir desses arrays logo em seguida).
+
+`SLOTS` (decisão de 2026-09-17) era colado à mão antes deste módulo
+existir -- ver transform_slots.py.
 """
 from __future__ import annotations
 
@@ -15,7 +18,7 @@ import json
 import re
 from pathlib import Path
 
-NAMES = ("RAW", "RAWD", "RAWH", "DAYCNT")
+NAMES = ("RAW", "RAWD", "RAWH", "DAYCNT", "SLOTS")
 
 _LAST_UPDATE_RE = re.compile(r'(<div[^>]*\bid="last-update"[^>]*>)[^<]*(</div>)')
 
@@ -47,9 +50,14 @@ def _upsert_var(lines: list[str], name: str, value) -> list[str]:
 def upsert_all(html_path: Path, data: dict[str, list[dict]]) -> None:
     # newline="" evita reescrever \n -> \r\n no arquivo inteiro (Windows) --
     # sem isso o diff mostraria o arquivo inteiro como alterado a cada execução.
+    # Só regrava as chaves presentes em `data` -- SLOTS é opcional (ver
+    # atualizar_tudo.py: se a checklist-captacao não for encontrada, SLOTS
+    # fica de fora e o `var SLOTS=...;` existente no arquivo não é tocado).
     lines = html_path.read_text(encoding="utf-8", newline="").splitlines(keepends=True)
 
-    for name in NAMES:
+    for name in data:
+        if name not in NAMES:
+            raise ValueError(f'Nome de constante desconhecido: "{name}" (esperado um de {NAMES}).')
         lines = _upsert_var(lines, name, data[name])
 
     html_path.write_text("".join(lines), encoding="utf-8", newline="")

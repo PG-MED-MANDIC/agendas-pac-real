@@ -3,6 +3,8 @@
 Scripts para regenerar as constantes de dados em `../index.html`: `RAW`,
 `RAWD`, `RAWH` e `DAYCNT` (dashboard "Triagem"), a partir da API da
 ConsultaJá -- **mesma conta/token já usados no pipeline do NPS-PACIENTE**.
+Também regenera `SLOTS` (capacidade planejada, aba "Slots x Realizado"),
+a partir de `dados-fonte/checklist-captacao.xlsx`.
 
 ## Instalação
 
@@ -18,7 +20,7 @@ token já usado no pipeline do NPS-PACIENTE. **Nunca** commite o `.env`.
 
 ## Uso
 
-Um comando só (busca na API + recalcula os 4 arrays + regrava `index.html`):
+Um comando só (busca na API + recalcula os 5 arrays + regrava `index.html`):
 
 ```
 python atualizar_tudo.py
@@ -59,6 +61,12 @@ no mesmo dia.
 - **`DAYCNT`**: por unidade+mês+semana → `d` = quantidade de dias distintos
   com pelo menos um registro (usado pra calcular médias diárias no
   dashboard).
+- **`SLOTS`**: por unidade (`u`, nome por extenso, ex. "Campinas") + data
+  (`d`, `AAAA-MM-DD`) + curso (`c`) + turma (`t`, string) → `s` = slots
+  previstos (capacidade planejada) e `md` = módulo. Usado só pela aba
+  "Slots x Realizado" (o próprio `index.html` cruza `SLOTS` com `RAWD` em
+  `SLOTSX`, pela chave `u|d|c|t`, pra comparar capacidade com o que a
+  ConsultaJá registrou). Ver "De onde vem SLOTS" abaixo.
 
 **Mapeamento de status** (`transform_triagem.py`): Realizado = `Compareceu`
 ou `Atendido`; Falta = `Faltou`; Cancelado = `Cancelado`;
@@ -72,9 +80,43 @@ externo perdido; este pipeline usa só o esquema documentado, então a
 primeira execução pode mudar levemente a distribuição por semana em relação
 ao que estava publicado antes.
 
-Não há campo de "última atualização" embutido no `index.html` -- não
-precisa tratar isso aqui (diferente do `CONSULTAJA_END_DATE` dinâmico do
-NPS-PACIENTE).
+## "Última atualização" (decisão de 2026-09-17)
+
+O `<div id="last-update">` do `index.html` só avança quando **os dois**
+dados-fonte foram conferidos com sucesso na mesma rodada de
+`atualizar_tudo.py`: a base da ConsultaJá (passo 1) **e** a
+checklist-captacao/`SLOTS` (passo 3). Se a checklist-captacao não for
+encontrada (ou falhar), RAW/RAWD/RAWH/DAYCNT ainda são regravados
+normalmente, mas o indicador **não** muda de valor -- ele existe pra dizer
+"os dois dados-fonte foram checados agora", não só "o script rodou" ou só
+"a ConsultaJá foi baixada". `atualizar_tudo.py` avisa explicitamente no
+relatório quando isso acontece.
+
+## De onde vem SLOTS (decisão de 2026-09-17)
+
+Antes deste módulo (`transform_slots.py`), `SLOTS` era um array colado à
+mão dentro do `index.html` -- nunca foi regravado pelo pipeline, então
+parou em 30/09/2026 (última vez que alguém repetiu o processo manual) e a
+aba "Slots x Realizado" ficava zerada pra qualquer data depois dessa.
+
+Agora `SLOTS` vem de `dados-fonte/checklist-captacao.xlsx` -- o **mesmo
+arquivo** usado pelo pipeline de `agendas_pgmed` (baixado manualmente do
+SharePoint, nunca por este pipeline; se não existir em `dados-fonte/`,
+este pipeline só avisa e deixa o `SLOTS` já publicado como está, em vez de
+falhar tudo).
+
+A checklist guarda a turma como `"<curso> <sigla da unidade> T<número>"`
+(ex. `Dermatologia Cirurgica SP T01`); a ConsultaJá guarda Unidade por
+extenso e Curso/Turma em colunas separadas. Pra que a chave `u|d|c|t` que
+o `index.html` já monta (`SLOTSX = SLOTS.map(...)`) encontre os
+registros certos dentro de `RAWD`, `transform_slots.py` emite `c` com a
+**mesma grafia de "Curso" que já aparece na ConsultaJá** para aquela
+combinação curso+unidade+turma (a ConsultaJá tem inconsistência de
+acentuação em Curso -- ex. "Dermatologia Cirurgica" e "Dermatologia
+Cirúrgica" convivem na mesma planilha). Se uma turma da checklist ainda
+não tem nenhum registro na ConsultaJá (turma nova, nome digitado
+diferente etc.), o pipeline usa o texto da própria checklist e avisa no
+relatório -- nunca descarta a linha silenciosamente.
 
 ## O que o pipeline garante
 
