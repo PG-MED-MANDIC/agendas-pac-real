@@ -1,5 +1,5 @@
 """Agrega o DataFrame de agendamentos (ConsultaJá) nos 4 arrays embutidos em
-../index.html: RAW (mês+semana), RAWD (dia), RAWH (hora), DAYCNT (dias
+../index.html: RAW (mês+dia), RAWD (dia), RAWH (hora), DAYCNT (dias
 distintos por mês+semana). Ver pipeline/README.md para o significado de
 cada campo.
 
@@ -7,9 +7,15 @@ Só usa as colunas Data/Horário de início/Status/Unidade/Curso/Turma --
 Paciente/Celular/Profissional/Convênio (que a API também traz) nunca entram
 no agregado.
 
-Semana do mês ("w"): faixas fixas de 7 dias, como documentado na própria UI
-do dashboard (Sem1=01-07 ... Sem5=29-31) -- os dias 29-31 caem todos na
-semana 5, não existe semana 6.
+RAW (2026-09-18, decisão do usuário): passou a ser por dia real ("d"), não
+mais por "semana do mês" em faixas fixas de 7 dias -- a semana de calendário
+(segunda a domingo) agora é calculada no próprio index.html a partir de "d"
+(ver getMondayKey() lá), inclusive semanas "cortadas" entre 2 meses. RAWH e
+DAYCNT continuam usando a faixa fixa antiga ("w", Sem1=01-07...Sem5=29-31)
+-- elas alimentam só o simulador de recepcionistas (aba "Simulação"), que já
+tinha um problema pré-existente e separado (o seletor daquela aba é rotulado
+por dia da semana -- Segunda..Domingo -- mas filtra por esse "w" antigo, que
+não é dia da semana; não foi tocado nesta mudança, ver PROGRESSO.md).
 """
 from __future__ import annotations
 
@@ -50,10 +56,10 @@ def _prepare(df: pd.DataFrame) -> pd.DataFrame:
 def build_raw(df: pd.DataFrame) -> list[dict]:
     prep = _prepare(df)
     grouped = (
-        prep.groupby(["u", "m", "w", "c", "t"])[["r", "f", "x", "a"]]
+        prep.groupby(["u", "m", "d", "c", "t"])[["r", "f", "x", "a"]]
         .sum()
         .reset_index()
-        .sort_values(["u", "m", "w", "c", "t"])
+        .sort_values(["u", "m", "d", "c", "t"])
     )
     return grouped.to_dict(orient="records")
 
