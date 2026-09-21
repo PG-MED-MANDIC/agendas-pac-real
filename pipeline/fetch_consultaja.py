@@ -26,7 +26,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from config import DADOS_FONTE_DIR, PIPELINE_DIR, load_consultaja_config
+from config import DADOS_FONTE_DIR, PROJECT_DIR, load_consultaja_config
 from consultaja_client import ConsultaJaClient, ConsultaJaConfigurationError
 
 
@@ -74,7 +74,7 @@ def fetch_and_save(
     DADOS_FONTE_DIR.mkdir(exist_ok=True)
     output_path = DADOS_FONTE_DIR / filename
     _write_excel(df, output_path)
-    print(f"\nSalvo em {output_path.relative_to(PIPELINE_DIR.parent)}")
+    print(f"\nSalvo em {output_path.relative_to(PROJECT_DIR.parent)}")
 
     return output_path
 
