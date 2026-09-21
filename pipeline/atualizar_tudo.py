@@ -31,6 +31,7 @@ import sys
 import traceback
 from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -40,6 +41,11 @@ from fetch_consultaja import fetch_and_save
 from render_index import upsert_all, upsert_last_update
 from transform_slots import build_slots
 from transform_triagem import build_daycnt, build_raw, build_rawd, build_rawh
+
+# Desde a migração pro GitHub Actions (2026-09-21), o runner roda em UTC --
+# sem fuso explícito, "última atualização" saía 3h atrasada (hora de
+# Brasília não observa horário de verão desde 2019, sempre UTC-3).
+FUSO_BR = ZoneInfo("America/Sao_Paulo")
 
 LOG_PATH = PIPELINE_DIR / "atualizacoes.log"
 
@@ -145,7 +151,7 @@ def main() -> int:
         # indicador existe pra dizer "os dois dados-fonte foram conferidos
         # nesta rodada", não só "o script rodou").
         if slots_ok:
-            upsert_last_update(INDEX_HTML_PATH, f"{datetime.now():%d/%m/%Y %H:%M}")
+            upsert_last_update(INDEX_HTML_PATH, f"{datetime.now(FUSO_BR):%d/%m/%Y %H:%M}")
         else:
             report.append(
                 '  "Última atualização" NÃO foi alterada -- só avança quando SLOTS '
