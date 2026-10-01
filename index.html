@@ -90,6 +90,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .wpill{padding:5px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid #F5E68A;background:transparent;color:#856404;cursor:pointer;transition:all .15s;font-family:inherit;}
 .wpill:hover{border-color:var(--gold);background:#FFF3CC;}
 .wpill.on{background:var(--gold);color:var(--navy);border-color:var(--gold);}
+.ypw{position:relative;display:inline-block;}
+.yarrow{display:inline-block;margin-left:6px;padding:0 3px;font-size:11px;line-height:1;border-radius:4px;}
+.yarrow:hover{background:rgba(26,36,89,.12);}
+.ybadge{display:none;margin-left:4px;min-width:16px;height:16px;line-height:16px;border-radius:8px;background:var(--navy);color:#fff;font-size:10px;text-align:center;padding:0 4px;}
+.ydd{display:none;position:absolute;left:0;top:calc(100% + 6px);z-index:30;min-width:190px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(26,36,89,.15);padding:6px;}
+.ydd.open{display:block;}
+.ydd label{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12.5px;font-weight:600;color:var(--navy);cursor:pointer;}
+.ydd label:hover{background:#F5F7FC;}
+.ydd .yd{width:12px;height:12px;border-radius:50%;flex:none;}
+.ydd .yclr{display:block;width:100%;text-align:left;border:0;background:transparent;border-top:1px solid var(--border);margin-top:4px;padding:7px 10px 4px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit;}
 .wrange{font-size:11px;color:#856404;margin-left:8px;}
 #weekBarO{background:transparent;border-bottom:none;padding:14px 32px;}
 #weekBarO .wpill{border:1.5px solid var(--navy);color:var(--navy);background:#FFFFFF;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:600;}
@@ -227,9 +237,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="csub">Realizados, faltas, cancelamentos e agendamentos por mês, comparando anos</div>
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:10px 0 14px">
         <div style="display:flex;flex-wrap:wrap;gap:8px">
-          <button class="wpill on" onclick="setYoY('r',this)">Realizados</button>
-          <button class="wpill" onclick="setYoY('f',this)">Faltas</button>
-          <button class="wpill" onclick="setYoY('x',this)">Cancelamentos</button>
+          <span class="ypw"><button class="wpill on" onclick="setYoY('r',this)">Realizados<span class="ybadge" id="yb_r"></span><span class="yarrow" title="Ver por filial" onclick="toggleYDD('r',event)">&#9662;</span></button><div class="ydd" id="ydd_r"></div></span>
+          <span class="ypw"><button class="wpill" onclick="setYoY('f',this)">Faltas<span class="ybadge" id="yb_f"></span><span class="yarrow" title="Ver por filial" onclick="toggleYDD('f',event)">&#9662;</span></button><div class="ydd" id="ydd_f"></div></span>
+          <span class="ypw"><button class="wpill" onclick="setYoY('x',this)">Cancelamentos<span class="ybadge" id="yb_x"></span><span class="yarrow" title="Ver por filial" onclick="toggleYDD('x',event)">&#9662;</span></button><div class="ydd" id="ydd_x"></div></span>
           <button class="wpill" onclick="setYoY('a',this)">Agendamentos</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
@@ -237,6 +247,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <button class="wpill" onclick="setYoYMode('p',this)">%</button>
         </div>
       </div>
+      <div id="yoyYearBar" style="display:none;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Ano:</span><span id="yoyYears" style="display:flex;flex-wrap:wrap;gap:8px"></span></div>
       <div style="position:relative;height:280px"><canvas id="gYoY"></canvas></div>
     </div></div>
     <div class="sec">Ranking por Curso</div>
@@ -1025,33 +1036,97 @@ function G(){
 
 var YOY={metric:'r',mode:'v'};
 var YOYCOLORS=['#94A3B8','#F5C518','#1A2459','#3182CE','#805AD5','#38A169'];
-var yoyLabelsPlugin={id:'yoyLabels',afterDatasetsDraw:function(chart){var ctx=chart.ctx;ctx.save();ctx.font='10px Inter, -apple-system, sans-serif';ctx.textAlign='center';var offs=[-10,-24,12];chart.data.datasets.forEach(function(ds,dsIndex){var meta=chart.getDatasetMeta(dsIndex);if(meta.hidden)return;meta.data.forEach(function(point,i){var val=ds.data[i];if(val===null||val===undefined)return;ctx.fillStyle=ds.borderColor;var txt=YOY.mode==='p'?val+'%':fn(val);ctx.fillText(txt,point.x,point.y+offs[dsIndex%3]);});});ctx.restore();}};
+var yoyLabelsPlugin={id:'yoyLabels',afterDatasetsDraw:function(chart){if(YOY.labels===false)return;var ctx=chart.ctx;ctx.save();ctx.font='10px Inter, -apple-system, sans-serif';ctx.textAlign='center';var offs=[-10,-24,12];chart.data.datasets.forEach(function(ds,dsIndex){var meta=chart.getDatasetMeta(dsIndex);if(meta.hidden)return;meta.data.forEach(function(point,i){var val=ds.data[i];if(val===null||val===undefined)return;ctx.fillStyle=ds.borderColor;var txt=YOY.mode==='p'?val+'%':fn(val);ctx.fillText(txt,point.x,point.y+offs[dsIndex%3]);});});ctx.restore();}};
 function setYoY(m,btn){YOY.metric=m;btn.parentNode.querySelectorAll('.wpill').forEach(function(p){p.classList.remove('on');});btn.classList.add('on');drawYoY();}
 function setYoYMode(md,btn){YOY.mode=md;btn.parentNode.querySelectorAll('.wpill').forEach(function(p){p.classList.remove('on');});btn.classList.add('on');drawYoY();}
+var YFIL=[{k:'Campinas',l:'Campinas',c:'#38A169'},{k:'São Paulo',l:'São Paulo',c:'#805AD5'},{k:'Brasília',l:'Brasília',c:'#3182CE'}];
+var YMET={r:{l:'Realizados',dash:[]},f:{l:'Faltas',dash:[7,4]},x:{l:'Cancelamentos',dash:[2,3]}};
+YOY.sel={r:[],f:[],x:[]};YOY.year=null;
+function yoyAny(){return YOY.sel.r.length+YOY.sel.f.length+YOY.sel.x.length>0;}
+function buildYDD(k){
+  var el=document.getElementById('ydd_'+k);
+  el.innerHTML=YFIL.map(function(f){return '<label><input type="checkbox" value="'+f.k+'"'+(YOY.sel[k].indexOf(f.k)>=0?' checked':'')+' onchange="yoySel(\''+k+'\',this)"><span class="yd" style="background:'+f.c+'"></span>'+f.l+'</label>';}).join('')+'<button class="yclr" onclick="yoyClear(\''+k+'\')">Limpar</button>';
+}
+function toggleYDD(k,ev){
+  ev.stopPropagation();
+  var el=document.getElementById('ydd_'+k),open=el.classList.contains('open');
+  closeYDD();
+  if(!open){buildYDD(k);el.classList.add('open');}
+}
+function closeYDD(){document.querySelectorAll('.ydd.open').forEach(function(e){e.classList.remove('open');});}
+document.addEventListener('click',function(e){if(!e.target.closest||!e.target.closest('.ypw'))closeYDD();});
+function yoySel(k,cb){
+  var a=YOY.sel[k],i=a.indexOf(cb.value);
+  if(cb.checked&&i<0)a.push(cb.value);
+  if(!cb.checked&&i>=0)a.splice(i,1);
+  drawYoY();
+}
+function yoyClear(k){YOY.sel[k]=[];buildYDD(k);drawYoY();}
+function setYoYYear(y){YOY.year=y;drawYoY();}
+function yoyBase(){
+  var c=document.getElementById('gC').value,s=document.getElementById('gS').value,e=document.getElementById('gE').value,w=WK.g;
+  return RAW.filter(function(r){return(!c||r.c===c)&&(!s||r.m>=s)&&(!e||r.m<=e)&&(!w||r.weekKey===w);});
+}
 function drawYoY(){
-  var data=fG();
-  var byYM={};
-  data.forEach(function(r){
-    var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10);
-    if(!byYM[y])byYM[y]={};
-    if(!byYM[y][mo])byYM[y][mo]={r:0,f:0,x:0,a:0};
-    byYM[y][mo].r+=r.r;byYM[y][mo].f+=r.f;byYM[y][mo].x+=r.x;byYM[y][mo].a+=r.a;
-  });
-  var years=Object.keys(byYM).sort();
   var MN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  var metric=YOY.metric,mode=YOY.mode;
-  var datasets=years.map(function(y,i){
-    var arr=[];
-    for(var mo=1;mo<=12;mo++){
-      var v=byYM[y][mo];
-      var val;
-      if(!v){val=null;}
-      else if(mode==='p'){var den=metric==='a'?(v.r+v.f+v.x+v.a):(v.r+v.f+v.x);val=den?Math.round(v[metric]/den*1000)/10:null;}
-      else{val=v[metric];}
-      arr.push(val);
-    }
-    return{label:y,data:arr,borderColor:YOYCOLORS[i%YOYCOLORS.length],backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,tension:.3};
-  });
+  var mode=YOY.mode,datasets,filMode=yoyAny();
+  ['r','f','x'].forEach(function(k){var b=document.getElementById('yb_'+k),n=YOY.sel[k].length;b.style.display=n?'inline-block':'none';b.textContent=n;});
+  var bar=document.getElementById('yoyYearBar');
+  function pct(v,metric){var den=metric==='a'?(v.r+v.f+v.x+v.a):(v.r+v.f+v.x);return den?Math.round(v[metric]/den*1000)/10:null;}
+  if(!filMode){
+    bar.style.display='none';
+    var data=fG();
+    var byYM={};
+    data.forEach(function(r){
+      var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10);
+      if(!byYM[y])byYM[y]={};
+      if(!byYM[y][mo])byYM[y][mo]={r:0,f:0,x:0,a:0};
+      byYM[y][mo].r+=r.r;byYM[y][mo].f+=r.f;byYM[y][mo].x+=r.x;byYM[y][mo].a+=r.a;
+    });
+    var years=Object.keys(byYM).sort();
+    var metric=YOY.metric;
+    datasets=years.map(function(y,i){
+      var arr=[];
+      for(var mo=1;mo<=12;mo++){
+        var v=byYM[y][mo],val;
+        if(!v){val=null;}
+        else if(mode==='p'){val=pct(v,metric);}
+        else{val=v[metric];}
+        arr.push(val);
+      }
+      return{label:y,data:arr,borderColor:YOYCOLORS[i%YOYCOLORS.length],backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,tension:.3};
+    });
+  }else{
+    var data2=yoyBase(),byU={},yrs={};
+    data2.forEach(function(r){
+      var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10);
+      yrs[y]=1;
+      var o=byU[r.u]||(byU[r.u]={});
+      var k=y+'|'+mo;
+      if(!o[k])o[k]={r:0,f:0,x:0,a:0};
+      o[k].r+=r.r;o[k].f+=r.f;o[k].x+=r.x;o[k].a+=r.a;
+    });
+    var ylist=Object.keys(yrs).sort();
+    if(!YOY.year||ylist.indexOf(YOY.year)<0)YOY.year=ylist[ylist.length-1];
+    bar.style.display='flex';
+    document.getElementById('yoyYears').innerHTML=ylist.map(function(y){return '<button class="wpill'+(y===YOY.year?' on':'')+'" onclick="setYoYYear(\''+y+'\')">'+y+'</button>';}).join('');
+    datasets=[];
+    ['r','f','x'].forEach(function(m){
+      YFIL.forEach(function(f){
+        if(YOY.sel[m].indexOf(f.k)<0)return;
+        var arr=[];
+        for(var mo=1;mo<=12;mo++){
+          var v=(byU[f.k]||{})[YOY.year+'|'+mo],val;
+          if(!v){val=null;}
+          else if(mode==='p'){val=pct(v,m);}
+          else{val=v[m];}
+          arr.push(val);
+        }
+        datasets.push({label:f.l+' · '+YMET[m].l,data:arr,borderColor:f.c,backgroundColor:f.c,borderWidth:2.5,borderDash:YMET[m].dash,pointRadius:3,tension:.3});
+      });
+    });
+  }
+  YOY.labels=datasets.length<=3;
   dc('gYoY');
   CH['gYoY']=new Chart(document.getElementById('gYoY'),{type:'line',data:{labels:MN,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,bottom:4}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:16}},tooltip:{callbacks:{label:function(ctx){var v=ctx.parsed.y;if(v===null||v===undefined)return ctx.dataset.label+': —';return ctx.dataset.label+': '+(mode==='p'?v+'%':fn(v));}}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096',callback:function(v){return mode==='p'?v+'%':v;}},grid:{color:'#F0F4FA'}}}},plugins:[yoyLabelsPlugin]});
 }
