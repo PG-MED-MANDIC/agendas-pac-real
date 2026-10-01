@@ -90,6 +90,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .wpill{padding:5px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid #F5E68A;background:transparent;color:#856404;cursor:pointer;transition:all .15s;font-family:inherit;}
 .wpill:hover{border-color:var(--gold);background:#FFF3CC;}
 .wpill.on{background:var(--gold);color:var(--navy);border-color:var(--gold);}
+.rkchip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:#fff;color:var(--navy);cursor:pointer;font-family:inherit;transition:all .15s;}
+.rkchip .yd{width:10px;height:10px;border-radius:50%;flex:none;}
+.rkchip.off{opacity:.45;background:#F5F7FC;text-decoration:line-through;}
+.rkchip.off .yd{background:#CBD5E0!important;}
+.rkall{border:0;background:transparent;color:var(--muted);font-size:11px;font-family:inherit;cursor:pointer;text-decoration:underline;padding:4px;}
 .ypw{position:relative;display:inline-block;}
 .yarrow{display:inline-block;margin-left:6px;padding:0 3px;font-size:11px;line-height:1;border-radius:4px;}
 .yarrow:hover{background:rgba(26,36,89,.12);}
@@ -232,6 +237,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="row full"><div class="card"><div class="ctitle">% Realizado, Falta e Cancelamento por Curso</div><div class="csub">Composição percentual (excluindo pendentes)</div><div style="position:relative;height:260px"><canvas id="gStk"></canvas></div></div></div>
     <div class="sec">Tendência Temporal</div>
     <div class="row full"><div class="card"><div class="ctitle">Tendência Mensal</div><div class="csub">Realizados, faltas, cancelamentos e agendamentos ao longo do tempo</div><div style="position:relative;height:260px"><canvas id="gLine"></canvas></div></div></div>
+    <div class="row full"><div class="card">
+      <div class="ctitle">Ranking por Disciplina</div>
+      <div class="csub">Disciplinas (cursos) por mês ao longo do ano — veja quais têm mais realizados, faltas, cancelamentos e agendamentos</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 10px">
+        <button class="wpill on" onclick="setRkC('r',this)">Realizados</button>
+        <button class="wpill" onclick="setRkC('f',this)">Faltas</button>
+        <button class="wpill" onclick="setRkC('x',this)">Cancelamentos</button>
+        <button class="wpill" onclick="setRkC('a',this)">Agendamentos</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Ano:</span><span id="rkYears" style="display:flex;flex-wrap:wrap;gap:8px"></span></div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Disciplinas:</span><span class="ypw"><button class="wpill" id="rkBtn" onclick="toggleRkDD(event)">Disciplinas <span id="rkCount"></span><span class="yarrow">&#9662;</span></button><div class="ydd" id="rkDD" style="min-width:240px;max-height:340px;overflow:auto"></div></span></div>
+      <div style="position:relative;height:320px"><canvas id="gRkC"></canvas></div>
+      <div class="csub" style="margin:18px 0 6px">Valores por mês — disciplinas selecionadas (intensidade = volume)</div>
+      <div class="hwrap"><table class="htable" id="rkTbl"></table></div>
+    </div></div>
     <div class="row full"><div class="card">
       <div class="ctitle">Comparação Ano vs Ano</div>
       <div class="csub">Realizados, faltas, cancelamentos e agendamentos por mês, comparando anos</div>
@@ -1031,12 +1051,66 @@ function G(){
   var bU={};data.forEach(function(r){if(!bU[r.u])bU[r.u]={};if(!bU[r.u][r.c])bU[r.u][r.c]=0;bU[r.u][r.c]+=r.r;});
   var unis=Object.keys(bU).sort(),topC=cursos.slice(0,6);
   dc('gUni');CH['gUni']=new Chart(document.getElementById('gUni'),{type:'bar',data:{labels:unis,datasets:topC.map(function(c){return{label:c,data:unis.map(function(u){return(bU[u]||{})[c]||0;}),backgroundColor:CC[c]||'#1A2459',stack:'s'};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:14}},tooltip:{mode:'index',intersect:false}},scales:{x:{stacked:true,ticks:{font:{size:11},color:'#718096'},grid:{display:false}},y:{stacked:true,ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
+  drawRkC();
   drawYoY();
 }
 
 var YOY={metric:'r',mode:'v'};
 var YOYCOLORS=['#94A3B8','#F5C518','#1A2459','#3182CE','#805AD5','#38A169'];
 var yoyLabelsPlugin={id:'yoyLabels',afterDatasetsDraw:function(chart){if(YOY.labels===false)return;var ctx=chart.ctx;ctx.save();ctx.font='10px Inter, -apple-system, sans-serif';ctx.textAlign='center';var offs=[-10,-24,12];chart.data.datasets.forEach(function(ds,dsIndex){var meta=chart.getDatasetMeta(dsIndex);if(meta.hidden)return;meta.data.forEach(function(point,i){var val=ds.data[i];if(val===null||val===undefined)return;ctx.fillStyle=ds.borderColor;var txt=YOY.mode==='p'?val+'%':fn(val);ctx.fillText(txt,point.x,point.y+offs[dsIndex%3]);});});ctx.restore();}};
+var RKC={m:'r',year:null,off:{},init:false,order:[],hl:-1};
+var RKPAL=['#1A2459','#E53E3E','#38A169','#F5C518','#3182CE','#805AD5','#ED8936','#D53F8C','#319795','#718096','#9C4221','#2C5282'];
+var RKLBL={r:'Realizados',f:'Faltas',x:'Cancelamentos',a:'Agendamentos'};
+var RKCOLOR={};
+(function(){Object.keys(RAW.reduce(function(o,r){o[r.c]=1;return o;},{})).sort().forEach(function(c,i){RKCOLOR[c]=RKPAL[i%RKPAL.length];});})();
+function setRkC(m,btn){RKC.m=m;btn.parentNode.querySelectorAll('.wpill').forEach(function(p){p.classList.remove('on');});btn.classList.add('on');drawRkC();}
+function setRkYear(y){RKC.year=y;drawRkC();}
+function rkToggle(c){RKC.off[c]=!RKC.off[c];drawRkC();}
+function rkTop(n){RKC.order.forEach(function(c,i){RKC.off[c]=i>=n;});drawRkC();}
+function rkAll(on){Object.keys(RKCOLOR).forEach(function(c){RKC.off[c]=!on;});drawRkC();}
+function toggleRkDD(ev){ev.stopPropagation();var el=document.getElementById('rkDD'),open=el.classList.contains('open');closeYDD();if(!open)el.classList.add('open');}
+function hojeISO(){var t=new Date();return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);}
+function lastActiveMonth(byMo){var last=0;for(var mo=1;mo<=12;mo++){var v=byMo[mo];if(v&&(v.r+v.f+v.x)>0)last=mo;}return last;}
+function drawRkC(){
+  var m=RKC.m,data=fG(),by={},yrs={},act={},hoje=hojeISO();
+  data.forEach(function(r){
+    var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10);
+    yrs[y]=1;
+    var o=by[r.c]||(by[r.c]={}),k=y+'|'+mo;
+    o[k]=(o[k]||0)+r[m];
+    var a=act[y]||(act[y]={}),am=a[mo]||(a[mo]={r:0,f:0,x:0});
+    if(r.d<=hoje){am.r+=r.r;am.f+=r.f;am.x+=r.x;}
+  });
+  var ylist=Object.keys(yrs).sort();
+  if(!RKC.year||ylist.indexOf(RKC.year)<0)RKC.year=ylist[ylist.length-1];
+  document.getElementById('rkYears').innerHTML=ylist.map(function(y){return '<button class="wpill'+(y===RKC.year?' on':'')+'" onclick="setRkYear(\''+y+'\')">'+y+'</button>';}).join('');
+  var last=lastActiveMonth(act[RKC.year]||{});
+  var cursos=Object.keys(by);
+  cursos.forEach(function(c){var t=0;for(var mo=1;mo<=12;mo++)t+=by[c][RKC.year+'|'+mo]||0;by[c].tot=t;});
+  cursos=cursos.filter(function(c){return by[c].tot>0;}).sort(function(a,b){return by[b].tot-by[a].tot;});
+  RKC.order=cursos;
+  if(!RKC.init&&cursos.length){RKC.init=true;cursos.forEach(function(c,i){RKC.off[c]=i>=5;});}
+  var nOn=cursos.filter(function(c){return !RKC.off[c];}).length;
+  document.getElementById('rkCount').textContent='('+nOn+'/'+cursos.length+')';
+  document.getElementById('rkDD').innerHTML=cursos.map(function(c){return '<label><input type="checkbox"'+(RKC.off[c]?'':' checked')+' onchange="rkToggle(this.value)" value="'+c+'"><span class="yd" style="background:'+RKCOLOR[c]+'"></span>'+c+'<span style="margin-left:auto;font-weight:400;color:var(--muted)">'+fn(by[c].tot)+'</span></label>';}).join('')+'<button class="yclr" onclick="rkTop(3)" style="display:inline-block;width:auto">Top 3</button><button class="yclr" onclick="rkTop(5)" style="display:inline-block;width:auto">Top 5</button><button class="yclr" onclick="rkAll(true)" style="display:inline-block;width:auto">Todas</button><button class="yclr" onclick="rkAll(false)" style="display:inline-block;width:auto">Nenhuma</button>';
+  var MN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].slice(0,last||12);
+  var ds=cursos.filter(function(c){return !RKC.off[c];}).map(function(c){
+    var arr=[];
+    for(var mo=1;mo<=MN.length;mo++){var v=by[c][RKC.year+'|'+mo];arr.push(v===undefined?null:v);}
+    return{label:c,data:arr,borderColor:RKCOLOR[c],backgroundColor:RKCOLOR[c],borderWidth:2.5,pointRadius:3,tension:.3};
+  });
+  RKC.hl=-1;
+  var tbl=cursos.filter(function(c){return !RKC.off[c];});
+  var hdr='<tr><th class="rh">Disciplina</th>'+MN.map(function(n){return '<th>'+n+'</th>';}).join('')+'<th>Total</th></tr>',mx=0;
+  tbl.forEach(function(c){for(var mo=1;mo<=MN.length;mo++){var v=by[c][RKC.year+'|'+mo]||0;if(v>mx)mx=v;}});
+  document.getElementById('rkTbl').innerHTML=hdr+tbl.map(function(c){
+    var row='<tr><td class="rh"><span class="yd" style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:'+RKCOLOR[c]+'"></span>'+c+'</td>';
+    for(var mo=1;mo<=MN.length;mo++){var v=by[c][RKC.year+'|'+mo]||0;row+='<td style="background:'+hbg(v,mx||1)+';color:'+hfg(v,mx||1)+'">'+(v?fn(v):'')+'</td>';}
+    return row+'<td style="background:transparent;color:var(--navy)">'+fn(by[c].tot)+'</td></tr>';
+  }).join('');
+  dc('gRkC');
+  CH['gRkC']=new Chart(document.getElementById('gRkC'),{type:'line',data:{labels:MN,datasets:ds},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10,bottom:4}},interaction:{mode:'nearest',axis:'xy',intersect:false},onHover:function(evt,els,chart){var i=els&&els.length?els[0].datasetIndex:-1;if(i===RKC.hl)return;RKC.hl=i;chart.data.datasets.forEach(function(d,k){var col=RKCOLOR[d.label];d.borderColor=(i<0||k===i)?col:col+'33';d.backgroundColor=d.borderColor;d.borderWidth=(k===i)?4:(i<0?2.5:1.5);d.order=(k===i)?0:1;});chart.update('none');},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=ctx.parsed.y;return ctx.dataset.label+': '+(v===null||v===undefined?'—':fn(v));}}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
+}
 function setYoY(m,btn){YOY.metric=m;btn.parentNode.querySelectorAll('.wpill').forEach(function(p){p.classList.remove('on');});btn.classList.add('on');drawYoY();}
 function setYoYMode(md,btn){YOY.mode=md;btn.parentNode.querySelectorAll('.wpill').forEach(function(p){p.classList.remove('on');});btn.classList.add('on');drawYoY();}
 var YFIL=[{k:'Campinas',l:'Campinas',c:'#38A169'},{k:'São Paulo',l:'São Paulo',c:'#805AD5'},{k:'Brasília',l:'Brasília',c:'#3182CE'}];
@@ -1085,11 +1159,16 @@ function drawYoY(){
     });
     var years=Object.keys(byYM).sort();
     var metric=YOY.metric;
+    var actY={},hojeY=hojeISO();
+    data.forEach(function(r){if(r.d>hojeY)return;var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10),a=actY[y]||(actY[y]={}),v=a[mo]||(a[mo]={r:0,f:0,x:0});v.r+=r.r;v.f+=r.f;v.x+=r.x;});
+    var lastY={},maxLast=0;
+    years.forEach(function(y){lastY[y]=lastActiveMonth(actY[y]||{});if(lastY[y]>maxLast)maxLast=lastY[y];});
+    MN=MN.slice(0,maxLast||12);
     datasets=years.map(function(y,i){
       var arr=[];
-      for(var mo=1;mo<=12;mo++){
+      for(var mo=1;mo<=MN.length;mo++){
         var v=byYM[y][mo],val;
-        if(!v){val=null;}
+        if(!v||mo>lastY[y]){val=null;}
         else if(mode==='p'){val=pct(v,metric);}
         else{val=v[metric];}
         arr.push(val);
@@ -1097,7 +1176,7 @@ function drawYoY(){
       return{label:y,data:arr,borderColor:YOYCOLORS[i%YOYCOLORS.length],backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,tension:.3};
     });
   }else{
-    var data2=yoyBase(),byU={},yrs={};
+    var data2=yoyBase(),byU={},yrs={},tot={},hojeF=hojeISO();
     data2.forEach(function(r){
       var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10);
       yrs[y]=1;
@@ -1105,9 +1184,12 @@ function drawYoY(){
       var k=y+'|'+mo;
       if(!o[k])o[k]={r:0,f:0,x:0,a:0};
       o[k].r+=r.r;o[k].f+=r.f;o[k].x+=r.x;o[k].a+=r.a;
+      if(r.d<=hojeF){var ty=tot[y]||(tot[y]={}),t=ty[mo]||(ty[mo]={r:0,f:0,x:0});t.r+=r.r;t.f+=r.f;t.x+=r.x;}
     });
     var ylist=Object.keys(yrs).sort();
     if(!YOY.year||ylist.indexOf(YOY.year)<0)YOY.year=ylist[ylist.length-1];
+    var lastF=lastActiveMonth(tot[YOY.year]||{});
+    MN=MN.slice(0,lastF||12);
     bar.style.display='flex';
     document.getElementById('yoyYears').innerHTML=ylist.map(function(y){return '<button class="wpill'+(y===YOY.year?' on':'')+'" onclick="setYoYYear(\''+y+'\')">'+y+'</button>';}).join('');
     datasets=[];
@@ -1115,7 +1197,7 @@ function drawYoY(){
       YFIL.forEach(function(f){
         if(YOY.sel[m].indexOf(f.k)<0)return;
         var arr=[];
-        for(var mo=1;mo<=12;mo++){
+        for(var mo=1;mo<=MN.length;mo++){
           var v=(byU[f.k]||{})[YOY.year+'|'+mo],val;
           if(!v){val=null;}
           else if(mode==='p'){val=pct(v,m);}
