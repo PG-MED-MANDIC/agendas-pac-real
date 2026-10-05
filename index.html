@@ -250,7 +250,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Ano:</span><span id="rkYears" style="display:flex;flex-wrap:wrap;gap:8px"></span></div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Disciplinas:</span><span class="ypw"><button class="wpill" id="rkBtn" onclick="toggleRkDD(event)">Disciplinas <span id="rkCount"></span><span class="yarrow">&#9662;</span></button><div class="ydd" id="rkDD" style="min-width:240px;max-height:340px;overflow:auto"></div></span></div>
       <div style="position:relative;height:320px"><canvas id="gRkC"></canvas></div>
-      <div class="csub" style="margin:18px 0 6px">Valores por mês — disciplinas selecionadas (intensidade = volume; % = participação da disciplina no total do mês)</div>
+      <div class="csub" style="margin:18px 0 6px">Valores por mês — disciplinas selecionadas (intensidade = volume; % = parte do botão ativo no total da própria disciplina no mês: realizados + faltas + cancelamentos + agendados)</div>
       <div class="hwrap"><table class="htable" id="rkTbl"></table></div>
     </div></div>
     <div class="row full"><div class="card">
@@ -1074,12 +1074,13 @@ function toggleRkDD(ev){ev.stopPropagation();var el=document.getElementById('rkD
 function hojeISO(){var t=new Date();return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);}
 function lastActiveMonth(byMo){var last=0;for(var mo=1;mo<=12;mo++){var v=byMo[mo];if(v&&(v.r+v.f)>0)last=mo;}return last;}
 function drawRkC(){
-  var m=RKC.m,data=fG(),by={},yrs={},act={},hoje=hojeISO();
+  var m=RKC.m,data=fG(),by={},den={},yrs={},act={},hoje=hojeISO();
   data.forEach(function(r){
     var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10);
     yrs[y]=1;
     var o=by[r.c]||(by[r.c]={}),k=y+'|'+mo;
     o[k]=(o[k]||0)+((m!=='a'&&r.d>hoje)?0:r[m]);
+    var dn=den[r.c]||(den[r.c]={});dn[k]=(dn[k]||0)+(r.d>hoje?0:(r.r+r.f+r.x))+r.a;
     var a=act[y]||(act[y]={}),am=a[mo]||(a[mo]={r:0,f:0,x:0});
     if(r.d<=hoje){am.r+=r.r;am.f+=r.f;am.x+=r.x;}
   });
@@ -1096,26 +1097,28 @@ function drawRkC(){
   document.getElementById('rkCount').textContent='('+nOn+'/'+cursos.length+')';
   document.getElementById('rkDD').innerHTML=cursos.map(function(c){return '<label><input type="checkbox"'+(RKC.off[c]?'':' checked')+' onchange="rkToggle(this.value)" value="'+c+'"><span class="yd" style="background:'+RKCOLOR[c]+'"></span>'+c+'<span style="margin-left:auto;font-weight:400;color:var(--muted)">'+fn(by[c].tot)+'</span></label>';}).join('')+'<button class="yclr" onclick="rkTop(3)" style="display:inline-block;width:auto">Top 3</button><button class="yclr" onclick="rkTop(5)" style="display:inline-block;width:auto">Top 5</button><button class="yclr" onclick="rkAll(true)" style="display:inline-block;width:auto">Todas</button><button class="yclr" onclick="rkAll(false)" style="display:inline-block;width:auto">Nenhuma</button>';
   var MN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].slice(0,last||12);
+  /* % = parte da disciplina (no botao ativo) dentro do total da propria disciplina no mes: realizados+faltas+cancelamentos+agendados */
+  function dden(c,mo){return (den[c]||{})[RKC.year+'|'+mo]||0;}
+  function dpct(c,mo){var d=dden(c,mo),v=by[c][RKC.year+'|'+mo]||0;return d?Math.round(v/d*1000)/10:0;}
   var ds=cursos.filter(function(c){return !RKC.off[c];}).map(function(c){
     var arr=[];
-    for(var mo=1;mo<=MN.length;mo++){var v=by[c][RKC.year+'|'+mo];arr.push(v===undefined?null:v);}
+    for(var mo=1;mo<=MN.length;mo++){var v=by[c][RKC.year+'|'+mo];arr.push(v===undefined?null:(RKC.mode==='p'?dpct(c,mo):v));}
     return{label:c,data:arr,borderColor:RKCOLOR[c],backgroundColor:RKCOLOR[c],borderWidth:2.5,pointRadius:3,tension:.3};
   });
   RKC.hl=-1;
   var tbl=cursos.filter(function(c){return !RKC.off[c];});
   var hdr='<tr><th class="rh">Disciplina</th>'+MN.map(function(n){return '<th>'+n+'</th>';}).join('')+'<th>Total</th></tr>',mx=0,isP=RKC.mode==='p';
-  var mTot={},yTot=0;
-  cursos.forEach(function(c){for(var mo=1;mo<=MN.length;mo++)mTot[mo]=(mTot[mo]||0)+(by[c][RKC.year+'|'+mo]||0);yTot+=by[c].tot;});
-  function cv(c,mo){var v=by[c][RKC.year+'|'+mo]||0;return isP?(mTot[mo]?v/mTot[mo]*100:0):v;}
+  function dyear(c){var t=0;for(var mo=1;mo<=12;mo++)t+=dden(c,mo);return t;}
+  function cv(c,mo){var v=by[c][RKC.year+'|'+mo]||0;return isP?dpct(c,mo):v;}
   function ft(x){return isP?(Math.round(x*10)/10).toString().replace('.',',')+'%':fn(x);}
   tbl.forEach(function(c){for(var mo=1;mo<=MN.length;mo++){var v=cv(c,mo);if(v>mx)mx=v;}});
   document.getElementById('rkTbl').innerHTML=hdr+tbl.map(function(c){
     var row='<tr><td class="rh"><span class="yd" style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:'+RKCOLOR[c]+'"></span>'+c+'</td>';
     for(var mo=1;mo<=MN.length;mo++){var v=cv(c,mo);row+='<td style="background:'+hbg(v,mx||1)+';color:'+hfg(v,mx||1)+'">'+(v?ft(v):'')+'</td>';}
-    return row+'<td style="background:transparent;color:var(--navy)">'+(isP?ft(yTot?by[c].tot/yTot*100:0):fn(by[c].tot))+'</td></tr>';
+    return row+'<td style="background:transparent;color:var(--navy)">'+(isP?ft(dyear(c)?by[c].tot/dyear(c)*100:0):fn(by[c].tot))+'</td></tr>';
   }).join('');
   dc('gRkC');
-  CH['gRkC']=new Chart(document.getElementById('gRkC'),{type:'line',data:{labels:MN,datasets:ds},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10,bottom:4}},interaction:{mode:'nearest',axis:'xy',intersect:false},onHover:function(evt,els,chart){var i=els&&els.length?els[0].datasetIndex:-1;if(i===RKC.hl)return;RKC.hl=i;chart.data.datasets.forEach(function(d,k){var col=RKCOLOR[d.label];d.borderColor=(i<0||k===i)?col:col+'33';d.backgroundColor=d.borderColor;d.borderWidth=(k===i)?4:(i<0?2.5:1.5);d.order=(k===i)?0:1;});chart.update('none');},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=ctx.parsed.y;return ctx.dataset.label+': '+(v===null||v===undefined?'—':fn(v));}}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
+  CH['gRkC']=new Chart(document.getElementById('gRkC'),{type:'line',data:{labels:MN,datasets:ds},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10,bottom:4}},interaction:{mode:'nearest',axis:'xy',intersect:false},onHover:function(evt,els,chart){var i=els&&els.length?els[0].datasetIndex:-1;if(i===RKC.hl)return;RKC.hl=i;chart.data.datasets.forEach(function(d,k){var col=RKCOLOR[d.label];d.borderColor=(i<0||k===i)?col:col+'33';d.backgroundColor=d.borderColor;d.borderWidth=(k===i)?4:(i<0?2.5:1.5);d.order=(k===i)?0:1;});chart.update('none');},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=ctx.parsed.y;return ctx.dataset.label+': '+(v===null||v===undefined?'—':(RKC.mode==='p'?v+'%':fn(v)));}}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10},color:'#718096',callback:function(v){return RKC.mode==='p'?v+'%':v;}},grid:{color:'#F0F4FA'}}}}});
 }
 function setYoY(m,btn){
   if(m==='a'){YOY.sel={r:[],f:[],x:[]};YOY.metric='a';}
