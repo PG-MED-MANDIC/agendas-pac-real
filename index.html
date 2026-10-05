@@ -1124,9 +1124,9 @@ function setYoY(m,btn){
   drawYoY();
 }
 function setYoYMode(md,btn){YOY.mode=md;btn.parentNode.querySelectorAll('.wpill').forEach(function(p){p.classList.remove('on');});btn.classList.add('on');drawYoY();}
-var YFIL=[{k:'Campinas',l:'Campinas',c:'#38A169'},{k:'São Paulo',l:'São Paulo',c:'#805AD5'},{k:'Brasília',l:'Brasília',c:'#3182CE'}];
+var YFIL=[{k:'Campinas',l:'Campinas',c:'#38A169'},{k:'São Paulo',l:'São Paulo',c:'#805AD5'},{k:'Brasília',l:'Brasília',c:'#3182CE'},{k:'Online',l:'Online',c:'#0BC5EA'}];
 var YMET={r:{l:'Realizados',dash:[],c:'#1A2459'},f:{l:'Faltas',dash:[7,4],c:'#E53E3E'},x:{l:'Cancelamentos',dash:[2,3],c:'#ED8936'}};
-var YPT={'Campinas':'circle','São Paulo':'rect','Brasília':'triangle'};
+var YPT={'Campinas':'circle','São Paulo':'rect','Brasília':'triangle','Online':'rectRot'};
 YOY.sel={r:[],f:[],x:[]};YOY.years=null;
 function yoyAny(){return YOY.sel.r.length+YOY.sel.f.length+YOY.sel.x.length>0;}
 function buildYDD(k){
