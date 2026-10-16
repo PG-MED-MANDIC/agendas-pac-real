@@ -283,29 +283,27 @@ img,canvas{max-width:100%;}
     <div class="row full"><div class="card"><div class="ctitle">Tendência Mensal</div><div class="csub">Realizados, faltas, cancelamentos e agendamentos ao longo do tempo</div><div style="position:relative;height:260px"><canvas id="gLine"></canvas></div></div></div>
     <div class="row full"><div class="card">
       <div class="ctitle">Ranking por Disciplina</div>
-      <div class="csub">Disciplinas (cursos) por mês ao longo do ano — veja quais têm mais realizados, faltas, cancelamentos e agendamentos</div>
+      <div class="csub">Disciplinas (cursos) por mês ao longo do ano — veja quais têm mais realizados, faltas e cancelamentos</div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 10px">
         <button class="wpill on" onclick="setRkC('r',this)">Realizados</button>
         <button class="wpill" onclick="setRkC('f',this)">Faltas</button>
         <button class="wpill" onclick="setRkC('x',this)">Cancelamentos</button>
-        <button class="wpill" onclick="setRkC('a',this)">Agendamentos</button>
         <span style="margin-left:auto;display:flex;gap:8px"><button class="wpill on" onclick="setRkMode('v',this)">Valores</button><button class="wpill" onclick="setRkMode('p',this)">%</button></span>
       </div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Ano:</span><span id="rkYears" style="display:flex;flex-wrap:wrap;gap:8px"></span></div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Disciplinas:</span><span class="ypw"><button class="wpill" id="rkBtn" onclick="toggleRkDD(event)">Disciplinas <span id="rkCount"></span><span class="yarrow">&#9662;</span></button><div class="ydd" id="rkDD" style="min-width:240px;max-height:340px;overflow:auto"></div></span></div>
       <div style="position:relative;height:320px"><canvas id="gRkC"></canvas></div>
-      <div class="csub" style="margin:18px 0 6px">Valores por mês — disciplinas selecionadas (intensidade = volume; % = parte do botão ativo no total da própria disciplina no mês: realizados + faltas + cancelamentos + agendados)</div>
+      <div class="csub" style="margin:18px 0 6px">Valores por mês — disciplinas selecionadas (intensidade = volume; % = parte do botão ativo no total da própria disciplina no mês: realizados + faltas + cancelamentos)</div>
       <div class="hwrap"><table class="htable" id="rkTbl"></table></div>
     </div></div>
     <div class="row full"><div class="card">
       <div class="ctitle">Comparação Ano vs Ano</div>
-      <div class="csub">Realizados, faltas, cancelamentos e agendamentos por mês, comparando anos</div>
+      <div class="csub">Realizados, faltas e cancelamentos por mês, comparando anos &middot; % = parte de realizados + faltas + cancelamentos</div>
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:10px 0 14px">
         <div style="display:flex;flex-wrap:wrap;gap:8px">
           <span class="ypw"><button class="wpill on" data-m="r" onclick="setYoY('r',this)">Realizados<span class="ybadge" id="yb_r"></span><span class="yarrow" title="Ver por filial" onclick="toggleYDD('r',event)">&#9662;</span></button><div class="ydd" id="ydd_r"></div></span>
           <span class="ypw"><button class="wpill" data-m="f" onclick="setYoY('f',this)">Faltas<span class="ybadge" id="yb_f"></span><span class="yarrow" title="Ver por filial" onclick="toggleYDD('f',event)">&#9662;</span></button><div class="ydd" id="ydd_f"></div></span>
           <span class="ypw"><button class="wpill" data-m="x" onclick="setYoY('x',this)">Cancelamentos<span class="ybadge" id="yb_x"></span><span class="yarrow" title="Ver por filial" onclick="toggleYDD('x',event)">&#9662;</span></button><div class="ydd" id="ydd_x"></div></span>
-          <button class="wpill" data-m="a" onclick="setYoY('a',this)">Agendamentos</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
           <button class="wpill on" onclick="setYoYMode('v',this)">Valores</button>
@@ -1124,7 +1122,7 @@ function drawRkC(){
     yrs[y]=1;
     var o=by[r.c]||(by[r.c]={}),k=y+'|'+mo;
     o[k]=(o[k]||0)+((m!=='a'&&r.d>hoje)?0:r[m]);
-    var dn=den[r.c]||(den[r.c]={});dn[k]=(dn[k]||0)+(r.d>hoje?0:(r.r+r.f+r.x))+r.a;
+    var dn=den[r.c]||(den[r.c]={});dn[k]=(dn[k]||0)+(r.d>hoje?0:(r.r+r.f+r.x))+0;
     var a=act[y]||(act[y]={}),am=a[mo]||(a[mo]={r:0,f:0,x:0});
     if(r.d<=hoje){am.r+=r.r;am.f+=r.f;am.x+=r.x;}
   });
@@ -1211,7 +1209,7 @@ function drawYoY(){
   document.querySelectorAll('#yb_r,#yb_f,#yb_x').forEach(function(b){var p=b.closest('.wpill');if(p)p.classList.toggle('on',filMode?YOY.sel[p.dataset.m].length>0:p.dataset.m===YOY.metric);});
   var pa=document.querySelector('.wpill[data-m="a"]');if(pa)pa.classList.toggle('on',!filMode&&YOY.metric==='a');
   var bar=document.getElementById('yoyYearBar');
-  function pct(v,metric){var den=metric==='a'?(v.r+v.f+v.x+v.a):(v.r+v.f+v.x);return den?Math.round(v[metric]/den*1000)/10:null;}
+  function pct(v,metric){var den=v.r+v.f+v.x;return den?Math.round(v[metric]/den*1000)/10:null;}
   if(!filMode){
     bar.style.display='none';
     var data=fG();
