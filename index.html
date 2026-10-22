@@ -1078,7 +1078,7 @@ function drawRkC(){
     yrs[y]=1;
     var o=by[r.c]||(by[r.c]={}),k=y+'|'+mo;
     o[k]=(o[k]||0)+((m!=='a'&&r.d>hoje)?0:r[m]);
-    var dn=den[r.c]||(den[r.c]={});dn[k]=(dn[k]||0)+(r.d>hoje?0:(r.r+r.f+r.x))+0;
+    var dn=den[r.c]||(den[r.c]={});dn[k]=(dn[k]||0)+(r.d>hoje?0:(r.r+r.f))+r.a;
     var a=act[y]||(act[y]={}),am=a[mo]||(a[mo]={r:0,f:0,x:0});
     if(r.d<=hoje){am.r+=r.r;am.f+=r.f;am.x+=r.x;}
   });
@@ -1095,7 +1095,7 @@ function drawRkC(){
   document.getElementById('rkCount').textContent='('+nOn+'/'+cursos.length+')';
   document.getElementById('rkDD').innerHTML=cursos.map(function(c){return '<label><input type="checkbox"'+(RKC.off[c]?'':' checked')+' onchange="rkToggle(this.value)" value="'+c+'"><span class="yd" style="background:'+RKCOLOR[c]+'"></span>'+c+'<span style="margin-left:auto;font-weight:400;color:var(--muted)">'+fn(by[c].tot)+'</span></label>';}).join('')+'<button class="yclr" onclick="rkTop(3)" style="display:inline-block;width:auto">Top 3</button><button class="yclr" onclick="rkTop(5)" style="display:inline-block;width:auto">Top 5</button><button class="yclr" onclick="rkAll(true)" style="display:inline-block;width:auto">Todas</button><button class="yclr" onclick="rkAll(false)" style="display:inline-block;width:auto">Nenhuma</button>';
   var MN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].slice(0,last||12);
-  /* % = parte da disciplina (no botao ativo) dentro do total da propria disciplina no mes: realizados+faltas+cancelamentos+agendados */
+  /* % = parte da disciplina (no botao ativo) dentro da agenda da propria disciplina no mes: realizados+faltas+agendados (mes inteiro, sem cancelados: a vaga cancelada pode ser reocupada) */
   function dden(c,mo){return (den[c]||{})[RKC.year+'|'+mo]||0;}
   function dpct(c,mo){var d=dden(c,mo),v=by[c][RKC.year+'|'+mo]||0;return d?Math.round(v/d*1000)/10:0;}
   var ds=cursos.filter(function(c){return !RKC.off[c];}).map(function(c){
