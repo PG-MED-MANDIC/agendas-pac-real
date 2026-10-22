@@ -249,12 +249,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Ano:</span><span id="rkYears" style="display:flex;flex-wrap:wrap;gap:8px"></span></div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Disciplinas:</span><span class="ypw"><button class="wpill" id="rkBtn" onclick="toggleRkDD(event)">Disciplinas <span id="rkCount"></span><span class="yarrow">&#9662;</span></button><div class="ydd" id="rkDD" style="min-width:240px;max-height:340px;overflow:auto"></div></span></div>
       <div style="position:relative;height:320px"><canvas id="gRkC"></canvas></div>
-      <div class="csub" style="margin:18px 0 6px">Valores por mês — disciplinas selecionadas (intensidade = volume; % = parte do botão ativo no total da própria disciplina no mês: realizados + faltas + cancelamentos)</div>
+      <div class="csub" id="rkTxt" style="margin:18px 0 6px">Valores por mês — disciplinas selecionadas (intensidade = volume; % = botão ativo ÷ agenda da própria disciplina no mês inteiro: realizados + faltas + agendados, sem cancelados — a vaga cancelada pode ser reocupada. Mês em andamento ainda não fechou)</div>
       <div class="hwrap"><table class="htable" id="rkTbl"></table></div>
     </div></div>
     <div class="row full"><div class="card">
       <div class="ctitle">Comparação Ano vs Ano</div>
-      <div class="csub">Realizados, faltas e cancelamentos por mês, comparando anos &middot; % = parte de realizados + faltas + cancelamentos</div>
+      <div class="csub" id="yoyTxt">Realizados, faltas e cancelamentos por mês, comparando anos &middot; % de Realizados = realizados &divide; (realizados + faltas + agendados do mês inteiro, sem cancelados) &middot; % de Faltas e de Cancelamentos = parte de realizados + faltas + cancelamentos &middot; ponto vazado = mês em andamento (ainda não fechou)</div>
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:10px 0 14px">
         <div style="display:flex;flex-wrap:wrap;gap:8px">
           <span class="ypw"><button class="wpill on" data-m="r" onclick="setYoY('r',this)">Realizados<span class="ybadge" id="yb_r"></span><span class="yarrow" title="Ver por filial" onclick="toggleYDD('r',event)">&#9662;</span></button><div class="ydd" id="ydd_r"></div></span>
@@ -1073,12 +1073,13 @@ function hojeISO(){var t=new Date();return t.getFullYear()+'-'+('0'+(t.getMonth(
 function lastActiveMonth(byMo){var last=0;for(var mo=1;mo<=12;mo++){var v=byMo[mo];if(v&&(v.r+v.f)>0)last=mo;}return last;}
 function drawRkC(){
   var m=RKC.m,data=fG(),by={},den={},yrs={},act={},hoje=hojeISO();
+  rkTexto();
   data.forEach(function(r){
     var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10);
     yrs[y]=1;
     var o=by[r.c]||(by[r.c]={}),k=y+'|'+mo;
-    o[k]=(o[k]||0)+((m!=='a'&&r.d>hoje)?0:r[m]);
-    var dn=den[r.c]||(den[r.c]={});dn[k]=(dn[k]||0)+(r.d>hoje?0:(r.r+r.f))+r.a;
+    o[k]=(o[k]||0)+((m!=='a'&&m!=='x'&&r.d>hoje)?0:r[m]);
+    var dn=den[r.c]||(den[r.c]={});dn[k]=(dn[k]||0)+(r.d>hoje?0:(r.r+r.f))+r.a+(m==='r'?0:r.x);
     var a=act[y]||(act[y]={}),am=a[mo]||(a[mo]={r:0,f:0,x:0});
     if(r.d<=hoje){am.r+=r.r;am.f+=r.f;am.x+=r.x;}
   });
@@ -1159,6 +1160,20 @@ function yoyBase(){
   return RAW.filter(function(r){return(!c||r.c===c)&&(!s||r.m>=s)&&(!e||r.m<=e)&&(!w||r.weekKey===w);});
 }
 /* Mes em andamento (mes de hoje, no ano corrente): ponto vazado + ultimo trecho tracejado */
+/* Texto explicativo dos cards: muda conforme o botao (Realizados/Faltas/Cancelamentos) e o modo (Valores/%) */
+var TXT_V={r:'Realizados = consultas concluídas (status Compareceu ou Atendido) com data até hoje',f:'Faltas = pacientes que faltaram (status Faltou) com data até hoje',x:'Cancelamentos = consultas canceladas (status Cancelado) no mês inteiro, inclusive datas futuras'};
+var TXT_P={r:'% de Realizados = realizados ÷ agenda do mês sem cancelados (realizados + faltas + agendados do mês inteiro)',f:'% de Faltas = faltas ÷ agenda total do mês (realizados + faltas + cancelados + agendados do mês inteiro)',x:'% de Cancelamentos = cancelados ÷ agenda total do mês (realizados + faltas + cancelados + agendados do mês inteiro)'};
+var TXT_YOY_P=TXT_P,TXT_RK_P=TXT_P;
+function yoyTexto(filMode){
+  var ms=filMode?['r','f','x'].filter(function(k){return YOY.sel[k].length;}):[YOY.metric==='a'?'r':YOY.metric];
+  var src=YOY.mode==='p'?TXT_YOY_P:TXT_V;
+  var el=document.getElementById('yoyTxt');if(!el)return;
+  el.textContent='Comparação por mês entre anos · '+ms.map(function(k){return src[k];}).join(' · ')+' · ponto vazado = mês em andamento (ainda não fechou)';
+}
+function rkTexto(){
+  var src=RKC.mode==='p'?TXT_RK_P:TXT_V,el=document.getElementById('rkTxt');if(!el)return;
+  el.textContent='Valores por mês — disciplinas selecionadas · '+(src[RKC.m]||src.r)+' · mês em andamento ainda não fechou';
+}
 function emAndamento(y,mo){var t=hojeISO();return String(y)===t.slice(0,4)&&mo===parseInt(t.slice(5,7),10);}
 function yoyMark(ds,y){
   var t=hojeISO();if(y!==t.slice(0,4))return ds;
@@ -1170,13 +1185,14 @@ function yoyMark(ds,y){
 function drawYoY(){
   var MN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   var mode=YOY.mode,datasets,filMode=yoyAny();
+  yoyTexto(filMode);
   ['r','f','x'].forEach(function(k){var b=document.getElementById('yb_'+k),n=YOY.sel[k].length;b.style.display=n?'inline-block':'none';b.textContent=n;});
   document.querySelectorAll('#yb_r,#yb_f,#yb_x').forEach(function(b){var p=b.closest('.wpill');if(p)p.classList.toggle('on',filMode?YOY.sel[p.dataset.m].length>0:p.dataset.m===YOY.metric);});
   var pa=document.querySelector('.wpill[data-m="a"]');if(pa)pa.classList.toggle('on',!filMode&&YOY.metric==='a');
   var bar=document.getElementById('yoyYearBar');
   /* Realizado: realizados / (realizados + faltas + agendados do mes inteiro), sem cancelados.
-     Faltas e Cancelamentos mantem a base antiga (r+f+x). */
-  function pct(v,metric){var den=metric==='r'?v.r+v.f+v.a:v.r+v.f+v.x;return den?Math.round(v[metric]/den*1000)/10:null;}
+     Faltas e Cancelamentos: / agenda total do mes (realizados + faltas + cancelamentos + agendados). */
+  function pct(v,metric){var den=metric==='r'?v.r+v.f+v.a:v.r+v.f+v.x+v.a;return den?Math.round(v[metric]/den*1000)/10:null;}
   if(!filMode){
     bar.style.display='none';
     var data=fG();
@@ -1185,7 +1201,7 @@ function drawYoY(){
       var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10);
       if(!byYM[y])byYM[y]={};
       if(!byYM[y][mo])byYM[y][mo]={r:0,f:0,x:0,a:0};
-      var fut=r.d>hojeY0;if(!fut){byYM[y][mo].r+=r.r;byYM[y][mo].f+=r.f;byYM[y][mo].x+=r.x;}byYM[y][mo].a+=r.a;
+      var fut=r.d>hojeY0;if(!fut){byYM[y][mo].r+=r.r;byYM[y][mo].f+=r.f;}byYM[y][mo].x+=r.x;byYM[y][mo].a+=r.a;
     });
     var years=Object.keys(byYM).sort();
     var metric=YOY.metric;
@@ -1213,7 +1229,7 @@ function drawYoY(){
       var o=byU[r.u]||(byU[r.u]={});
       var k=y+'|'+mo;
       if(!o[k])o[k]={r:0,f:0,x:0,a:0};
-      if(r.d<=hojeF){o[k].r+=r.r;o[k].f+=r.f;o[k].x+=r.x;}o[k].a+=r.a;
+      if(r.d<=hojeF){o[k].r+=r.r;o[k].f+=r.f;}o[k].x+=r.x;o[k].a+=r.a;
       if(r.d<=hojeF){var ty=tot[y]||(tot[y]={}),t=ty[mo]||(ty[mo]={r:0,f:0,x:0});t.r+=r.r;t.f+=r.f;t.x+=r.x;}
     });
     var ylist=Object.keys(yrs).sort();
