@@ -1116,7 +1116,7 @@ function drawRkC(){
     return row+'<td style="background:transparent;color:var(--navy)">'+(isP?ft(dyear(c)?by[c].tot/dyear(c)*100:0):fn(by[c].tot))+'</td></tr>';
   }).join('');
   dc('gRkC');
-  CH['gRkC']=new Chart(document.getElementById('gRkC'),{type:'line',data:{labels:MN,datasets:ds},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10,bottom:4}},interaction:{mode:'nearest',axis:'xy',intersect:false},onHover:function(evt,els,chart){var i=els&&els.length?els[0].datasetIndex:-1;if(i===RKC.hl)return;RKC.hl=i;chart.data.datasets.forEach(function(d,k){var col=RKCOLOR[d.label];d.borderColor=(i<0||k===i)?col:col+'33';d.backgroundColor=d.borderColor;d.borderWidth=(k===i)?4:(i<0?2.5:1.5);d.order=(k===i)?0:1;});chart.update('none');},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=ctx.parsed.y;return ctx.dataset.label+': '+(v===null||v===undefined?'—':(RKC.mode==='p'?v+'%':fn(v)));}}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10},color:'#718096',callback:function(v){return RKC.mode==='p'?v+'%':v;}},grid:{color:'#F0F4FA'}}}}});
+  CH['gRkC']=new Chart(document.getElementById('gRkC'),{type:'line',data:{labels:MN,datasets:ds},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10,bottom:4}},interaction:{mode:'nearest',axis:'xy',intersect:false},onHover:function(evt,els,chart){var i=els&&els.length?els[0].datasetIndex:-1;if(i===RKC.hl)return;RKC.hl=i;chart.data.datasets.forEach(function(d,k){var col=RKCOLOR[d.label];d.borderColor=(i<0||k===i)?col:col+'33';d.backgroundColor=d.borderColor;d.borderWidth=(k===i)?4:(i<0?2.5:1.5);d.order=(k===i)?0:1;});chart.update('none');},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var v=ctx.parsed.y;return ctx.dataset.label+': '+(v===null||v===undefined?'—':(RKC.mode==='p'?v+'%':fn(v))+(emAndamento(RKC.year,ctx.dataIndex+1)?'  ·  ⏳ mês em andamento':''));}}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10},color:'#718096',callback:function(v){return RKC.mode==='p'?v+'%':v;}},grid:{color:'#F0F4FA'}}}}});
 }
 function setYoY(m,btn){
   if(m==='a'){YOY.sel={r:[],f:[],x:[]};YOY.metric='a';}
@@ -1159,9 +1159,10 @@ function yoyBase(){
   return RAW.filter(function(r){return(!c||r.c===c)&&(!s||r.m>=s)&&(!e||r.m<=e)&&(!w||r.weekKey===w);});
 }
 /* Mes em andamento (mes de hoje, no ano corrente): ponto vazado + ultimo trecho tracejado */
+function emAndamento(y,mo){var t=hojeISO();return String(y)===t.slice(0,4)&&mo===parseInt(t.slice(5,7),10);}
 function yoyMark(ds,y){
   var t=hojeISO();if(y!==t.slice(0,4))return ds;
-  var cm=parseInt(t.slice(5,7),10),col=ds.borderColor;
+  var cm=parseInt(t.slice(5,7),10),col=ds.borderColor;ds.anoRef=y;
   ds.pointBackgroundColor=ds.data.map(function(v,i){return i+1===cm?'#fff':col;});
   ds.segment={borderDash:function(c){return c.p1DataIndex+1===cm?[5,4]:undefined;}};
   return ds;
@@ -1245,7 +1246,7 @@ function drawYoY(){
   }
   YOY.labels=datasets.length<=3;
   dc('gYoY');
-  CH['gYoY']=new Chart(document.getElementById('gYoY'),{type:'line',data:{labels:MN,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,bottom:4}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:16,usePointStyle:true}},tooltip:{callbacks:{label:function(ctx){var v=ctx.parsed.y;if(v===null||v===undefined)return ctx.dataset.label+': —';return ctx.dataset.label+': '+(mode==='p'?v+'%':fn(v));}}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096',callback:function(v){return mode==='p'?v+'%':v;}},grid:{color:'#F0F4FA'}}}},plugins:[yoyLabelsPlugin]});
+  CH['gYoY']=new Chart(document.getElementById('gYoY'),{type:'line',data:{labels:MN,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,bottom:4}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:16,usePointStyle:true}},tooltip:{callbacks:{label:function(ctx){var v=ctx.parsed.y;if(v===null||v===undefined)return ctx.dataset.label+': —';return ctx.dataset.label+': '+(mode==='p'?v+'%':fn(v))+(emAndamento(ctx.dataset.anoRef,ctx.dataIndex+1)?'  ·  ⏳ mês em andamento':'');}}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096',callback:function(v){return mode==='p'?v+'%':v;}},grid:{color:'#F0F4FA'}}}},plugins:[yoyLabelsPlugin]});
 }
 
 /* ---- TURMA ---- */
