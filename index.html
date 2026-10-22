@@ -1158,6 +1158,14 @@ function yoyBase(){
   var c=document.getElementById('gC').value,s=document.getElementById('gS').value,e=document.getElementById('gE').value,w=WK.g;
   return RAW.filter(function(r){return(!c||r.c===c)&&(!s||r.m>=s)&&(!e||r.m<=e)&&(!w||r.weekKey===w);});
 }
+/* Mes em andamento (mes de hoje, no ano corrente): ponto vazado + ultimo trecho tracejado */
+function yoyMark(ds,y){
+  var t=hojeISO();if(y!==t.slice(0,4))return ds;
+  var cm=parseInt(t.slice(5,7),10),col=ds.borderColor;
+  ds.pointBackgroundColor=ds.data.map(function(v,i){return i+1===cm?'#fff':col;});
+  ds.segment={borderDash:function(c){return c.p1DataIndex+1===cm?[5,4]:undefined;}};
+  return ds;
+}
 function drawYoY(){
   var MN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   var mode=YOY.mode,datasets,filMode=yoyAny();
@@ -1165,7 +1173,9 @@ function drawYoY(){
   document.querySelectorAll('#yb_r,#yb_f,#yb_x').forEach(function(b){var p=b.closest('.wpill');if(p)p.classList.toggle('on',filMode?YOY.sel[p.dataset.m].length>0:p.dataset.m===YOY.metric);});
   var pa=document.querySelector('.wpill[data-m="a"]');if(pa)pa.classList.toggle('on',!filMode&&YOY.metric==='a');
   var bar=document.getElementById('yoyYearBar');
-  function pct(v,metric){var den=v.r+v.f+v.x;return den?Math.round(v[metric]/den*1000)/10:null;}
+  /* Realizado: realizados / (realizados + faltas + agendados do mes inteiro), sem cancelados.
+     Faltas e Cancelamentos mantem a base antiga (r+f+x). */
+  function pct(v,metric){var den=metric==='r'?v.r+v.f+v.a:v.r+v.f+v.x;return den?Math.round(v[metric]/den*1000)/10:null;}
   if(!filMode){
     bar.style.display='none';
     var data=fG();
@@ -1192,7 +1202,7 @@ function drawYoY(){
         else{val=v[metric];}
         arr.push(val);
       }
-      return{label:y,data:arr,borderColor:YOYCOLORS[i%YOYCOLORS.length],backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,tension:.3};
+      return yoyMark({label:y,data:arr,borderColor:YOYCOLORS[i%YOYCOLORS.length],backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,tension:.3},y);
     });
   }else{
     var data2=yoyBase(),byU={},yrs={},tot={},hojeF=hojeISO();
@@ -1228,7 +1238,7 @@ function drawYoY(){
             arr.push(val);
           }
           var older=multiY&&yi<YOY.years.length-1,mc=YMET[m].c,col=older?mc+'88':mc;
-          datasets.push({label:f.l+' · '+YMET[m].l+(multiY?' · '+y:''),data:arr,borderColor:col,backgroundColor:col,borderWidth:older?2:2.5,borderDash:YMET[m].dash,pointStyle:YPT[f.k]||'circle',pointRadius:5,pointHoverRadius:7,tension:.3});
+          datasets.push(yoyMark({label:f.l+' · '+YMET[m].l+(multiY?' · '+y:''),data:arr,borderColor:col,backgroundColor:col,borderWidth:older?2:2.5,borderDash:YMET[m].dash,pointStyle:YPT[f.k]||'circle',pointRadius:5,pointHoverRadius:7,tension:.3},y));
         });
       });
     });
