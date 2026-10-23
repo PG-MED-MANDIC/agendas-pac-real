@@ -18,7 +18,7 @@ import json
 import re
 from pathlib import Path
 
-NAMES = ("RAW", "RAWD", "RAWH", "RAWHD", "DAYSD", "DAYCNT", "SLOTS")
+NAMES = ("RAW", "RAWD", "RAWH", "RAWHD", "DAYSD", "FUTHD", "DAYCNT", "SLOTS")
 
 _LAST_UPDATE_RE = re.compile(r'(<div[^>]*\bid="last-update"[^>]*>)[^<]*(</div>)')
 

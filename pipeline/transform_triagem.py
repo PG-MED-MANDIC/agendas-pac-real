@@ -93,29 +93,48 @@ def build_rawh(df: pd.DataFrame) -> list[dict]:
 
 
 def build_rawhd(df: pd.DataFrame) -> list[dict]:
-    """Mesmo critério de build_rawh (realizado + falta, por hora), mas por DIA
-    real ("d", AAAA-MM-DD) em vez de mês+faixa. Alimenta só o filtro "Dia" do
-    simulador (dias da semana reais e dias exatos do calendário); sem esse
-    filtro o simulador continua usando RAWH/DAYCNT.
+    """Por unidade + DIA real ("d") + hora ("h"): n = consultas concluídas
+    (Compareceu/Atendido); f = faltas; x = cancelados; a = agendados/confirmados
+    ainda sem resultado. Alimenta o Solver da Recepção: só "n" entra nos cálculos
+    de recepcionistas; f/x/a aparecem na visão "Dados reais".
     """
     prep = _prepare(df)
-    ocorridas = prep[(prep["r"] | prep["f"]) & prep["h"].notna()].copy()
-    ocorridas["h"] = ocorridas["h"].astype(int)
+    com_hora = prep[prep["h"].notna()].copy()
+    com_hora["h"] = com_hora["h"].astype(int)
     grouped = (
-        ocorridas.groupby(["u", "d", "h"])
-        .size()
-        .reset_index(name="n")
+        com_hora.groupby(["u", "d", "h"])
+        .agg(n=("r", "sum"), f=("f", "sum"), x=("x", "sum"), a=("a", "sum"))
+        .reset_index()
         .sort_values(["u", "d", "h"])
     )
+    for c in ("n", "f", "x", "a"):
+        grouped[c] = grouped[c].astype(int)
+    grouped = grouped[(grouped["n"] + grouped["f"] + grouped["x"] + grouped["a"]) > 0]
     return grouped.to_dict(orient="records")
 
 
 def build_daysd(df: pd.DataFrame) -> list[dict]:
-    """Dias distintos (unidade + data) com pelo menos um registro -- o
-    denominador das médias diárias do filtro "Dia" (equivale ao DAYCNT, mas por dia).
+    """Dias (unidade + data) com pelo menos 1 consulta concluída -- o divisor das
+    médias do Solver (dias sem nenhum paciente concluído, inclusive futuros, não entram).
     """
     prep = _prepare(df)
-    grouped = prep[["u", "d"]].drop_duplicates().sort_values(["u", "d"])
+    grouped = prep[prep["r"]][["u", "d"]].drop_duplicates().sort_values(["u", "d"])
+    return grouped.to_dict(orient="records")
+
+
+def build_futhd(df: pd.DataFrame, a_partir_de: str) -> list[dict]:
+    """Agendados/confirmados por unidade + dia + hora de `a_partir_de` (AAAA-MM-DD)
+    em diante. Alimenta o "Planejar equipe" (só contagens, nenhum dado de paciente).
+    """
+    prep = _prepare(df)
+    fut = prep[prep["a"] & prep["h"].notna() & (prep["d"] >= a_partir_de)].copy()
+    fut["h"] = fut["h"].astype(int)
+    grouped = (
+        fut.groupby(["u", "d", "h"])
+        .size()
+        .reset_index(name="n")
+        .sort_values(["u", "d", "h"])
+    )
     return grouped.to_dict(orient="records")
 
 

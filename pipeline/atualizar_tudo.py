@@ -40,7 +40,7 @@ from consultaja_client import ConsultaJaConfigurationError
 from fetch_consultaja import fetch_and_save
 from render_index import upsert_all, upsert_last_update
 from transform_slots import build_slots
-from transform_triagem import build_daycnt, build_daysd, build_raw, build_rawd, build_rawh, build_rawhd
+from transform_triagem import build_daycnt, build_daysd, build_futhd, build_raw, build_rawd, build_rawh, build_rawhd
 
 # Desde a migração pro GitHub Actions (2026-09-21), o runner roda em UTC --
 # sem fuso explícito, "última atualização" saía 3h atrasada (hora de
@@ -106,6 +106,7 @@ def main() -> int:
             "RAWH": build_rawh(df),
             "RAWHD": build_rawhd(df),
             "DAYSD": build_daysd(df),
+            "FUTHD": build_futhd(df, datetime.now(FUSO_BR).date().isoformat()),
             "DAYCNT": build_daycnt(df),
         }
     except Exception:
@@ -119,6 +120,7 @@ def main() -> int:
         f"{len(data['RAWD'])} combinações dia/curso/turma · "
         f"{len(data['RAWH'])} combinações de hora · "
         f"{len(data['RAWHD'])} combinações dia/hora · "
+        f"{len(data['FUTHD'])} combinações de agendados futuros · "
         f"{len(data['DAYCNT'])} combinações mês/semana."
     )
 
