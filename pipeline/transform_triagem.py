@@ -92,6 +92,33 @@ def build_rawh(df: pd.DataFrame) -> list[dict]:
     return grouped.to_dict(orient="records")
 
 
+def build_rawhd(df: pd.DataFrame) -> list[dict]:
+    """Mesmo critério de build_rawh (realizado + falta, por hora), mas por DIA
+    real ("d", AAAA-MM-DD) em vez de mês+faixa. Alimenta só o filtro "Dia" do
+    simulador (dias da semana reais e dias exatos do calendário); sem esse
+    filtro o simulador continua usando RAWH/DAYCNT.
+    """
+    prep = _prepare(df)
+    ocorridas = prep[(prep["r"] | prep["f"]) & prep["h"].notna()].copy()
+    ocorridas["h"] = ocorridas["h"].astype(int)
+    grouped = (
+        ocorridas.groupby(["u", "d", "h"])
+        .size()
+        .reset_index(name="n")
+        .sort_values(["u", "d", "h"])
+    )
+    return grouped.to_dict(orient="records")
+
+
+def build_daysd(df: pd.DataFrame) -> list[dict]:
+    """Dias distintos (unidade + data) com pelo menos um registro -- o
+    denominador das médias diárias do filtro "Dia" (equivale ao DAYCNT, mas por dia).
+    """
+    prep = _prepare(df)
+    grouped = prep[["u", "d"]].drop_duplicates().sort_values(["u", "d"])
+    return grouped.to_dict(orient="records")
+
+
 def build_daycnt(df: pd.DataFrame) -> list[dict]:
     prep = _prepare(df)
     grouped = (

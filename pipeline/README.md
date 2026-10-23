@@ -61,6 +61,11 @@ no mesmo dia.
 - **`DAYCNT`**: por unidade+mês+semana → `d` = quantidade de dias distintos
   com pelo menos um registro (usado pra calcular médias diárias no
   dashboard).
+- **`RAWHD`** / **`DAYSD`**: o mesmo que `RAWH`/`DAYCNT`, mas por **dia real**
+  (`d` = `AAAA-MM-DD`): `RAWHD` = unidade+dia+hora → `n` (ocorridas);
+  `DAYSD` = unidade+dia com algum registro. Usados só quando o filtro "Dia"
+  do Simulador de Recepção está ativo (dias da semana reais / dias do
+  calendário); sem ele o simulador usa `RAWH`/`DAYCNT`.
 - **`SLOTS`**: por unidade (`u`, nome por extenso, ex. "Campinas") + data
   (`d`, `AAAA-MM-DD`) + curso (`c`) + turma (`t`, string) → `s` = slots
   previstos (capacidade planejada) e `md` = módulo. Usado só pela aba
@@ -126,7 +131,7 @@ relatório -- nunca descarta a linha silenciosamente.
   agendamento`/`Formato` (que a API também traz) nunca entram no agregado
   gravado em `index.html`.
 - **Regravação cirúrgica** (`render_index.py`): `upsert_all()` substitui só
-  as 4 linhas `var RAW`/`RAWD`/`RAWH`/`DAYCNT` -- o resto do arquivo (HTML,
+  as linhas `var RAW`/`RAWD`/`RAWH`/`RAWHD`/`DAYSD`/`DAYCNT` -- o resto do arquivo (HTML,
   CSS, lógica de gráficos/filtros) não é tocado.
 - **Sem automação não supervisionada**: assim como no NPS-PACIENTE, nada
   aqui roda sozinho (sem agendador/cron) -- cada execução da API traz
