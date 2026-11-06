@@ -371,9 +371,9 @@ table.pl-t td.b{font-weight:700;color:var(--navy);}
   </div>
   <div class="main">
     <div class="kgrid">
-      <div class="kcard r"><div class="klbl">Consultas Realizadas</div><div class="kval" id="gKR">—</div><div class="kpct" id="gKRP">—</div><div class="ksub">do total ocorrido</div></div>
-      <div class="kcard f"><div class="klbl">Faltas</div><div class="kval" id="gKF">—</div><div class="kpct" id="gKFP">—</div><div class="ksub">do total ocorrido</div></div>
-      <div class="kcard x"><div class="klbl">Cancelamentos</div><div class="kval" id="gKX">—</div><div class="kpct" id="gKXP">—</div><div class="ksub">do total ocorrido</div></div>
+      <div class="kcard r"><div class="klbl">Consultas Realizadas</div><div class="kval" id="gKR">—</div><div class="kpct" id="gKRP">—</div><div class="ksub">sobre realizados + faltas + agendados</div></div>
+      <div class="kcard f"><div class="klbl">Faltas</div><div class="kval" id="gKF">—</div><div class="kpct" id="gKFP">—</div><div class="ksub">da agenda total</div></div>
+      <div class="kcard x"><div class="klbl">Cancelamentos</div><div class="kval" id="gKX">—</div><div class="kpct" id="gKXP">—</div><div class="ksub">da agenda total</div></div>
       <div class="kcard a"><div class="klbl">Agendados / Pendentes</div><div class="kval" id="gKA">—</div><div class="kpct" id="gKAP">—</div><div class="ksub">consultas futuras</div></div>
     </div>
     <div class="sec">Desempenho por Curso</div>
@@ -1283,13 +1283,14 @@ function resetG(){['gU','gC','gM'].forEach(function(id){MS[id].sel=[];msPaint(id
 function G(){
   var data=fG(),totR=0,totF=0,totX=0,totA=0;
   data.forEach(function(r){totR+=r.r;totF+=r.f;totX+=r.x;totA+=r.a;});
-  var totO=totR+totF+totX;
+  var totAg=totR+totF+totX+totA; /* agenda total do periodo */
+  var totRB=totR+totF+totA; /* base de Realizados: sem cancelamentos (vaga cancelada pode ser reocupada) */
   document.getElementById('gKR').textContent=fn(totR);document.getElementById('gKF').textContent=fn(totF);
   document.getElementById('gKX').textContent=fn(totX);document.getElementById('gKA').textContent=fn(totA);
-  document.getElementById('gKRP').textContent=pc(totR,totO)+'% de realização';
-  document.getElementById('gKFP').textContent=pc(totF,totO)+'% de falta';
-  document.getElementById('gKXP').textContent=pc(totX,totO)+'% cancelado';
-  document.getElementById('gKAP').textContent=pc(totA,totO+totA)+'% do total';
+  document.getElementById('gKRP').textContent=pc(totR,totRB)+'% de realização';
+  document.getElementById('gKFP').textContent=pc(totF,totAg)+'% de falta';
+  document.getElementById('gKXP').textContent=pc(totX,totAg)+'% cancelado';
+  document.getElementById('gKAP').textContent=pc(totA,totAg)+'% do total';
   var bC={};data.forEach(function(r){if(!bC[r.c])bC[r.c]={r:0,f:0,x:0,a:0};bC[r.c].r+=r.r;bC[r.c].f+=r.f;bC[r.c].x+=r.x;bC[r.c].a+=r.a;});
   var cursos=Object.keys(bC).sort(function(a,b){return bC[b].r-bC[a].r;});
   dc('gBar');CH['gBar']=new Chart(document.getElementById('gBar'),{type:'bar',data:{labels:cursos,datasets:[{data:cursos.map(function(c){return bC[c].r;}),backgroundColor:cursos.map(function(c){return CC[c]||'#1A2459';}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
