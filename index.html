@@ -456,15 +456,15 @@ table.pl-t td.b{font-weight:700;color:var(--navy);}
       <div class="sec">Selecionar Turma</div>
       <div class="pills" id="tPills"></div>
       <div class="kgrid">
-        <div class="kcard r"><div class="klbl">Realizados</div><div class="kval" id="tKR">—</div><div class="kpct" id="tKRP">—</div><div class="ksub">do total ocorrido</div></div>
-        <div class="kcard f"><div class="klbl">Faltas</div><div class="kval" id="tKF">—</div><div class="kpct" id="tKFP">—</div><div class="ksub">do total ocorrido</div></div>
-        <div class="kcard x"><div class="klbl">Cancelamentos</div><div class="kval" id="tKX">—</div><div class="kpct" id="tKXP">—</div><div class="ksub">do total ocorrido</div></div>
+        <div class="kcard r"><div class="klbl">Realizados</div><div class="kval" id="tKR">—</div><div class="kpct" id="tKRP">—</div><div class="ksub">sobre realizados + faltas + agendados</div></div>
+        <div class="kcard f"><div class="klbl">Faltas</div><div class="kval" id="tKF">—</div><div class="kpct" id="tKFP">—</div><div class="ksub">da agenda total</div></div>
+        <div class="kcard x"><div class="klbl">Cancelamentos</div><div class="kval" id="tKX">—</div><div class="kpct" id="tKXP">—</div><div class="ksub">da agenda total</div></div>
         <div class="kcard a"><div class="klbl">Agendados</div><div class="kval" id="tKA">—</div><div class="kpct" id="tKAP">—</div><div class="ksub">consultas futuras</div></div>
       </div>
       <div class="sec">Comparativo entre Turmas</div>
       <div class="row half">
         <div class="card"><div class="ctitle">Realizados por Turma</div><div class="csub">Volume absoluto por turma</div><div style="position:relative;height:260px"><canvas id="tBar"></canvas></div></div>
-        <div class="card"><div class="ctitle">% por Turma</div><div class="csub">Realização, falta e cancelamento</div><div style="position:relative;height:260px"><canvas id="tStk"></canvas></div></div>
+        <div class="card"><div class="ctitle">% por Turma</div><div class="csub">Realização = ÷ (realizados + faltas + agendados, sem cancelados) &middot; Falta e Cancelamento = ÷ agenda total</div><div style="position:relative;height:260px"><canvas id="tStk"></canvas></div></div>
       </div>
       <div class="sec">Tendência Temporal</div>
       <div class="row full"><div class="card"><div class="ctitle">Tendência Mensal</div><div class="csub" id="tLineSub">Evolução ao longo do tempo</div><div style="position:relative;height:260px"><canvas id="tLine"></canvas></div></div></div>
@@ -542,9 +542,9 @@ table.pl-t td.b{font-weight:700;color:var(--navy);}
   </div>
   <div class="main">
     <div class="kgrid">
-      <div class="kcard r"><div class="klbl">Total Realizados</div><div class="kval" id="rKR">—</div><div class="kpct" id="rKRP">—</div><div class="ksub">do total ocorrido</div></div>
-      <div class="kcard f"><div class="klbl">Total No-show</div><div class="kval" id="rKF">—</div><div class="kpct" id="rKFP">—</div><div class="ksub">do total ocorrido</div></div>
-      <div class="kcard x"><div class="klbl">Total Cancelados</div><div class="kval" id="rKX">—</div><div class="kpct" id="rKXP">—</div><div class="ksub">do total ocorrido</div></div>
+      <div class="kcard r"><div class="klbl">Total Realizados</div><div class="kval" id="rKR">—</div><div class="kpct" id="rKRP">—</div><div class="ksub">sobre realizados + faltas + agendados</div></div>
+      <div class="kcard f"><div class="klbl">Total No-show</div><div class="kval" id="rKF">—</div><div class="kpct" id="rKFP">—</div><div class="ksub">da agenda total</div></div>
+      <div class="kcard x"><div class="klbl">Total Cancelados</div><div class="kval" id="rKX">—</div><div class="kpct" id="rKXP">—</div><div class="ksub">da agenda total</div></div>
       <div class="kcard a"><div class="klbl">Total Agendados</div><div class="kval" id="rKA">—</div><div class="kpct" id="rKAP">—</div><div class="ksub">consultas futuras</div></div>
     </div>
     <div class="rk-grid">
@@ -1603,20 +1603,20 @@ function fT(inclT){var u=document.getElementById('tU').value,c=document.getEleme
 function T(){
   var c=document.getElementById('tC').value;if(!c)return;
   var dSel=fT(true),dAll=fT(false);
-  var totR=0,totF=0,totX=0,totA=0;dSel.forEach(function(r){totR+=r.r;totF+=r.f;totX+=r.x;totA+=r.a;});var totO=totR+totF+totX;
+  var totR=0,totF=0,totX=0,totA=0;dSel.forEach(function(r){totR+=r.r;totF+=r.f;totX+=r.x;totA+=r.a;});var totAg=totR+totF+totX+totA,totRB=totR+totF+totA; /* regra nova: Realizado sem cancelados; demais sobre agenda total */
   document.getElementById('tKR').textContent=fn(totR);document.getElementById('tKF').textContent=fn(totF);document.getElementById('tKX').textContent=fn(totX);document.getElementById('tKA').textContent=fn(totA);
-  document.getElementById('tKRP').textContent=pc(totR,totO)+'% de realização';document.getElementById('tKFP').textContent=pc(totF,totO)+'% de falta';document.getElementById('tKXP').textContent=pc(totX,totO)+'% cancelado';document.getElementById('tKAP').textContent=pc(totA,totO+totA)+'% do total';
+  document.getElementById('tKRP').textContent=pc(totR,totRB)+'% de realização';document.getElementById('tKFP').textContent=pc(totF,totAg)+'% de falta';document.getElementById('tKXP').textContent=pc(totX,totAg)+'% cancelado';document.getElementById('tKAP').textContent=pc(totA,totAg)+'% do total';
   var bT={};dAll.forEach(function(r){if(!bT[r.t])bT[r.t]={r:0,f:0,x:0,a:0};bT[r.t].r+=r.r;bT[r.t].f+=r.f;bT[r.t].x+=r.x;bT[r.t].a+=r.a;});
   var turmas=Object.keys(bT).sort(function(a,b){return+a-+b;});
   var tCols=turmas.map(function(_,i){return TP[i%TP.length];});
   var bgC=turmas.map(function(t,i){return(selT==='all'||t===selT)?tCols[i]:tCols[i]+'55';});
   dc('tBar');CH['tBar']=new Chart(document.getElementById('tBar'),{type:'bar',data:{labels:turmas.map(function(t){return'Turma '+t;}),datasets:[{data:turmas.map(function(t){return bT[t].r;}),backgroundColor:bgC,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
-  dc('tStk');CH['tStk']=new Chart(document.getElementById('tStk'),{type:'bar',data:{labels:turmas.map(function(t){return'Turma '+t;}),datasets:[{label:'Realizado %',data:turmas.map(function(t){var b=bT[t],tot=b.r+b.f+b.x;return pc(b.r,tot);}),backgroundColor:'#1A2459',stack:'s',borderRadius:{topLeft:4,topRight:4}},{label:'Falta %',data:turmas.map(function(t){var b=bT[t],tot=b.r+b.f+b.x;return pc(b.f,tot);}),backgroundColor:'#E53E3E',stack:'s'},{label:'Cancelado %',data:turmas.map(function(t){var b=bT[t],tot=b.r+b.f+b.x;return pc(b.x,tot);}),backgroundColor:'#ED8936',stack:'s'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}},scales:{x:{stacked:true,ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{stacked:true,max:100,ticks:{font:{size:10},color:'#718096',callback:function(v){return v+'%';}},grid:{color:'#F0F4FA'}}}}});
+  dc('tStk');CH['tStk']=new Chart(document.getElementById('tStk'),{type:'bar',data:{labels:turmas.map(function(t){return'Turma '+t;}),datasets:[{label:'Realizado %',data:turmas.map(function(t){var b=bT[t];return pc(b.r,b.r+b.f+b.a);}),backgroundColor:'#1A2459',borderRadius:4},{label:'Falta %',data:turmas.map(function(t){var b=bT[t];return pc(b.f,b.r+b.f+b.x+b.a);}),backgroundColor:'#E53E3E',borderRadius:4},{label:'Cancelado %',data:turmas.map(function(t){var b=bT[t];return pc(b.x,b.r+b.f+b.x+b.a);}),backgroundColor:'#ED8936',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{max:100,ticks:{font:{size:10},color:'#718096',callback:function(v){return v+'%';}},grid:{color:'#F0F4FA'}}}}});
   var bM={};dSel.forEach(function(r){if(!bM[r.m])bM[r.m]={r:0,f:0,x:0,a:0};bM[r.m].r+=r.r;bM[r.m].f+=r.f;bM[r.m].x+=r.x;bM[r.m].a+=r.a;});
   var meses=Object.keys(bM).sort();
   document.getElementById('tLineSub').textContent=selT==='all'?c+' — todas as turmas':c+' · Turma '+selT;
   dc('tLine');CH['tLine']=new Chart(document.getElementById('tLine'),{type:'line',data:{labels:meses.map(fm),datasets:[{label:'Realizado',data:meses.map(function(m){return bM[m].r;}),borderColor:'#1A2459',backgroundColor:'rgba(26,36,89,.08)',borderWidth:2.5,pointRadius:3,tension:.3,fill:true},{label:'Falta',data:meses.map(function(m){return bM[m].f;}),borderColor:'#E53E3E',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3,borderDash:[4,3]},{label:'Cancelado',data:meses.map(function(m){return bM[m].x;}),borderColor:'#ED8936',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3,borderDash:[4,3]},{label:'Agendado',data:meses.map(function(m){return bM[m].a;}),borderColor:'#B8940A',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3,borderDash:[2,4]}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:16}}},scales:{x:{ticks:{font:{size:9},color:'#718096',maxRotation:45},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
-  var rd=turmas.map(function(t,i){var b=bT[t],tot=b.r+b.f+b.x;return{t:t,r:b.r,pr:pc(b.r,tot),pf:pc(b.f,tot),px:pc(b.x,tot),col:tCols[i]};}).sort(function(a,b){return b.pr-a.pr;});
+  var rd=turmas.map(function(t,i){var b=bT[t],tot=b.r+b.f+b.x+b.a;return{t:t,r:b.r,pr:pc(b.r,b.r+b.f+b.a),pf:pc(b.f,tot),px:pc(b.x,tot),col:tCols[i]};}).sort(function(a,b){return b.pr-a.pr;});
   var tb=document.getElementById('tRank');tb.innerHTML='';
   rd.forEach(function(d,i){var isSel=selT!=='all'&&d.t===selT;tb.innerHTML+='<tr style="'+(isSel?'background:#F0F4FF;':'')+'cursor:pointer" onclick="clickRankT(\''+d.t+'\')"><td class="rnk">'+(i+1)+'</td><td><span class="tag" style="background:'+d.col+'22;color:'+d.col+'">Turma '+d.t+'</span></td><td class="bignum">'+fn(d.r)+'</td><td>'+barRow(d.pr,'#1A2459')+'</td><td>'+barRow(d.pf,'#E53E3E')+'</td><td>'+barRow(d.px,'#ED8936')+'</td><td>'+badge(d.pr)+'</td></tr>';});
   var hD={};dAll.forEach(function(r){if(!hD[r.t])hD[r.t]={};if(!hD[r.t][r.m])hD[r.t][r.m]=0;hD[r.t][r.m]+=r.r;});
@@ -1647,16 +1647,16 @@ var rSortCol='pr',rSortDir=-1;
 function R(){
   var data=fR(),totR=0,totF=0,totX=0,totA=0;
   data.forEach(function(r){totR+=r.r;totF+=r.f;totX+=r.x;totA+=r.a;});
-  var totO=totR+totF+totX;
+  var totAg=totR+totF+totX+totA,totRB=totR+totF+totA; /* regra nova: Realizado sem cancelados; demais sobre agenda total */
   document.getElementById('rKR').textContent=fn(totR);document.getElementById('rKF').textContent=fn(totF);
   document.getElementById('rKX').textContent=fn(totX);document.getElementById('rKA').textContent=fn(totA);
-  document.getElementById('rKRP').textContent=pc(totR,totO)+'% de realização';
-  document.getElementById('rKFP').textContent=pc(totF,totO)+'% no-show';
-  document.getElementById('rKXP').textContent=pc(totX,totO)+'% cancelado';
-  document.getElementById('rKAP').textContent=pc(totA,totO+totA)+'% do total';
+  document.getElementById('rKRP').textContent=pc(totR,totRB)+'% de realização';
+  document.getElementById('rKFP').textContent=pc(totF,totAg)+'% no-show';
+  document.getElementById('rKXP').textContent=pc(totX,totAg)+'% cancelado';
+  document.getElementById('rKAP').textContent=pc(totA,totAg)+'% do total';
   var agg={};
   data.forEach(function(r){var key=rGroup==='turma'?r.c+'||'+r.t:r.c;if(!agg[key])agg[key]={curso:r.c,turma:r.t,r:0,f:0,x:0,a:0};agg[key].r+=r.r;agg[key].f+=r.f;agg[key].x+=r.x;agg[key].a+=r.a;});
-  var rows=Object.values(agg).map(function(d){var tot=d.r+d.f+d.x;return{curso:d.curso,turma:d.turma,r:d.r,f:d.f,x:d.x,a:d.a,tot:tot,pr:pc(d.r,tot),pf:pc(d.f,tot),px:pc(d.x,tot),pa:pc(d.a,d.a+tot)};});
+  var rows=Object.values(agg).map(function(d){var tot=d.r+d.f+d.x+d.a;return{curso:d.curso,turma:d.turma,r:d.r,f:d.f,x:d.x,a:d.a,tot:tot,pr:pc(d.r,d.r+d.f+d.a),pf:pc(d.f,tot),px:pc(d.x,tot),pa:pc(d.a,tot)};});
   var maxR=Math.max.apply(null,rows.map(function(d){return d.r;}).concat([1]));
   var maxF=Math.max.apply(null,rows.map(function(d){return d.f;}).concat([1]));
   var maxX=Math.max.apply(null,rows.map(function(d){return d.x;}).concat([1]));
