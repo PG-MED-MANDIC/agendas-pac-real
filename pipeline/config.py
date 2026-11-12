@@ -35,6 +35,9 @@ DADOS_FONTE_DIR = PROJECT_DIR.parent / "dados-fonte"
 # das práticas) -- baixado manualmente do SharePoint, nunca por este
 # pipeline. Usado só pela aba "Slots x Realizado" (ver transform_slots.py).
 CHECKLIST_XLSX_PATH = DADOS_FONTE_DIR / "checklist-captacao.xlsx"
+# Slots REAIS (view do RDS, via automacao-dashboard/atualizar_checklist_rds.py --publicar). Opcional:
+# se não existir, SLOTS segue só pelo xlsx acima (plano B).
+CHECKLIST_REAL_PATH = DADOS_FONTE_DIR / "checklist_real.json"
 
 
 @dataclass(frozen=True)

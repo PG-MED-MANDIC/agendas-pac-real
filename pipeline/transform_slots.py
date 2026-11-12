@@ -183,3 +183,74 @@ def build_slots(
         raise RuntimeError("Nenhuma linha de Slots válida encontrada em nenhuma aba.")
 
     return sorted(agg.values(), key=lambda d: (d["u"], d["d"], d["c"], d["t"]))
+
+
+# ---------------------------------------------------------------------------
+# Fonte nova (decisão de 2026-11-12): slots REAIS da view do RDS (TI/Raul)
+# ---------------------------------------------------------------------------
+# `dados-fonte/checklist_real.json` é gerado pelo script local
+# automacao-dashboard/atualizar_checklist_rds.py (view
+# private.vw_checklist_operacional_real, uma linha por prática).
+# Capacidade = `total_real` = slots regulares + buffer + extras do Consulta Já,
+# SEM os inativados; os `fechados` (sobras fechadas a partir de D-1) CONTAM como
+# capacidade (decisão do usuário). Agendado/compareceu/falta/cancelado seguem
+# vindo da ConsultaJá (API) -- este módulo só fornece a capacidade.
+
+def _slots_do_rds(json_path: Path, df_consultaja: pd.DataFrame, warnings: list[str]):
+    import json
+
+    dados = json.loads(Path(json_path).read_text(encoding="utf-8"))
+    janela = dados.get("janela") or {}
+    ini = janela.get("ini") or ""
+    curso_por_combo = _curso_lookup(df_consultaja)
+    warned: set[str] = set()
+    agg: dict[tuple[str, str, str, str], dict] = {}
+
+    for r in dados.get("linhas", []):
+        data_iso = str(r.get("data_pratica") or "")[:10]
+        turma_full = str(r.get("turma") or "").strip()
+        if not data_iso or _norm(turma_full) in TURMAS_IGNORADAS:
+            continue
+        parsed = _parse_turma(turma_full)
+        if parsed is None:
+            if turma_full not in warned:
+                warned.add(turma_full)
+                warnings.append(f'Turma "{turma_full}" (RDS): nome fora do padrão "<curso> <sigla> T<número>" -- não entra em Slots.')
+            continue
+        curso_raw, unidade_code, turma_num = parsed
+        unidade_full = UNIDADE_MAP[unidade_code]
+        curso_final = curso_por_combo.get((_norm(curso_raw), unidade_full, turma_num))
+        if curso_final is None:
+            if turma_full not in warned:
+                warned.add(turma_full)
+                warnings.append(
+                    f'Turma "{turma_full}" (RDS): sem registro curso/unidade/turma na ConsultaJá ainda -- usando o nome de curso do RDS.'
+                )
+            curso_final = curso_raw
+        key = (unidade_full, data_iso, curso_final, str(turma_num))
+        if key not in agg:
+            agg[key] = {"u": unidade_full, "d": data_iso, "c": curso_final, "t": str(turma_num), "s": 0,
+                        "md": str(r.get("modulo") or "").strip()}
+        agg[key]["s"] += int(r.get("total_real") or 0)
+    return ini, agg
+
+
+def build_slots_hibrido(
+    xlsx_path: Path | None, json_path: Path | None, df_consultaja: pd.DataFrame, warnings: list[str] | None = None
+) -> list[dict]:
+    """RDS (slots reais) para as datas dentro da janela do JSON; xlsx (slots previstos)
+    para as datas anteriores à janela. Sem JSON, comporta-se como `build_slots` (plano B)."""
+    if warnings is None:
+        warnings = []
+    antigos: list[dict] = []
+    if xlsx_path is not None and Path(xlsx_path).exists():
+        antigos = build_slots(xlsx_path, df_consultaja, warnings=warnings)
+    if json_path is None or not Path(json_path).exists():
+        if not antigos:
+            raise RuntimeError("Sem fonte de slots: nem checklist_real.json nem checklist-captacao.xlsx.")
+        return antigos
+    ini, novos = _slots_do_rds(json_path, df_consultaja, warnings)
+    mantidos = [s for s in antigos if s["d"] < ini]
+    warnings.append(f"Slots: {len(novos)} combinações do RDS (a partir de {ini}) + {len(mantidos)} do xlsx (antes dessa data).")
+    saida = mantidos + list(novos.values())
+    return sorted(saida, key=lambda d: (d["u"], d["d"], d["c"], d["t"]))

@@ -35,11 +35,11 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from config import CHECKLIST_XLSX_PATH, DADOS_FONTE_DIR, INDEX_HTML_PATH, PIPELINE_DIR
+from config import CHECKLIST_REAL_PATH, CHECKLIST_XLSX_PATH, DADOS_FONTE_DIR, INDEX_HTML_PATH, PIPELINE_DIR
 from consultaja_client import ConsultaJaConfigurationError
 from fetch_consultaja import fetch_and_save
 from render_index import upsert_all, upsert_last_update
-from transform_slots import build_slots
+from transform_slots import build_slots_hibrido
 from transform_triagem import build_daycnt, build_daysd, build_futhd, build_raw, build_rawd, build_rawh, build_rawhd
 
 # Desde a migração pro GitHub Actions (2026-09-21), o runner roda em UTC --
@@ -126,7 +126,7 @@ def main() -> int:
 
     report.append("\nPASSO 3/3 -- recalcular SLOTS (capacidade planejada, aba \"Slots x Realizado\")")
     slots_ok = False
-    if not CHECKLIST_XLSX_PATH.exists():
+    if not CHECKLIST_XLSX_PATH.exists() and not CHECKLIST_REAL_PATH.exists():
         report.append(
             f"  Aviso: {CHECKLIST_XLSX_PATH.relative_to(DADOS_FONTE_DIR.parent)} não existe -- "
             'SLOTS não foi recalculado (o que já está publicado em index.html continua valendo). '
@@ -136,7 +136,7 @@ def main() -> int:
     else:
         try:
             slots_warnings: list[str] = []
-            data["SLOTS"] = build_slots(CHECKLIST_XLSX_PATH, df, warnings=slots_warnings)
+            data["SLOTS"] = build_slots_hibrido(CHECKLIST_XLSX_PATH, CHECKLIST_REAL_PATH, df, warnings=slots_warnings)
             slots_ok = True
         except Exception:
             report.append("  FALHOU: erro ao processar Slots. Detalhes:")
