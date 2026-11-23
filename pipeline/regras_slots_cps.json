@@ -1,0 +1,72 @@
+{
+  "ativa": true,
+  "descricao": "REGRA TEMPORARIA de slots so para Campinas (CPS). Vale ate o Raul atualizar a view do RDS. Detalhes: REGRA_TEMPORARIA_SLOTS_CAMPINAS.md",
+  "unidade": "CPS",
+  "a_partir_de": "2026-11-23",
+  "clinicas": {
+    "Endocrinologia": {
+      "reg_dia": 18
+    },
+    "Neuropediatria": {
+      "reg_dia": 13
+    },
+    "Nutrologia": {
+      "reg_dia": 9
+    },
+    "Oftalmologia": {
+      "reg_dia": 18
+    },
+    "Pediatria": {
+      "reg_dia": 14
+    },
+    "Psiquiatria": {
+      "reg_dia": 18,
+      "por_turma": {
+        "2": 12
+      }
+    }
+  },
+  "dermatologia": {
+    "pac_por_horario": 3,
+    "minutos_uteis_por_turma": {
+      "3": 390,
+      "4": 390,
+      "5": 390,
+      "6": 390,
+      "7": 390,
+      "8": 360,
+      "9": 360,
+      "10": 360
+    },
+    "duracao_por_modulo": {
+      "2": 60,
+      "3": 60,
+      "4": 60,
+      "5": 60,
+      "6": 60,
+      "7": 60,
+      "8": 90,
+      "9": 60,
+      "10": 90,
+      "11": 60,
+      "12": 45,
+      "13": 60,
+      "14": 60,
+      "15": 90,
+      "16": 90,
+      "17": 60,
+      "18": 90,
+      "19": 90
+    },
+    "duracao_excecao": {
+      "9": {
+        "6": 30,
+        "8": 30
+      }
+    },
+    "sem_regra_modulos": [
+      1,
+      20
+    ]
+  }
+}

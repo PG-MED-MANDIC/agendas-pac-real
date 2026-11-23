@@ -206,7 +206,11 @@ def _slots_do_rds(json_path: Path, df_consultaja: pd.DataFrame, warnings: list[s
     warned: set[str] = set()
     agg: dict[tuple[str, str, str, str], dict] = {}
 
-    for r in dados.get("linhas", []):
+    # REGRA TEMPORARIA Campinas (desligar: "ativa": false em regras_slots_cps.json)
+    from regra_slots_cps import aplicar as _regra_cps
+    linhas = _regra_cps(dados.get("linhas", []), warnings)
+
+    for r in linhas:
         data_iso = str(r.get("data_pratica") or "")[:10]
         turma_full = str(r.get("turma") or "").strip()
         if not data_iso or _norm(turma_full) in TURMAS_IGNORADAS:
