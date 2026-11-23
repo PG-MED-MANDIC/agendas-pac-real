@@ -20,8 +20,8 @@ Criada em 23/11/2026. Estudo de origem: `regra-campinas-capacidade/` (HTML da co
 ## PASSO A PASSO — voltar atrás (true -> false) e fazer valer
 1. Abrir `pipeline/regras_slots_cps.json` (no GitHub: repo `PG-MED-MANDIC/agendas-pac-real` > pipeline > regras_slots_cps.json > lápis) e trocar `"ativa": true` por `"ativa": false`. Commit.
 2. Fazer a rodada rodar: GitHub > repo **`automacao-dashboard`** > Actions > workflow de atualização > **Run workflow** > grupo **`agendas-pac-real,agendas_pgmed,coord_mandic_pgmed`** (a regra só afeta agendas-pac-real e coord_mandic_pgmed). Se não rodar na mão, vale sozinho na próxima rodada automática (~06:17 e ~11:23 BRT; a das 08:51 é só csat).
-   Atalho: n8n, workflow `RDDWtJw1m7cuhuTn` (gatilhos 06:00/08:45/11:00) — o das 08:45 é só csat, então prefira o botão do GitHub. O token local dá 403.
-3. Conferir no log da rodada: **não** deve aparecer "ATENCAO -- REGRA TEMPORARIA DE SLOTS CAMPINAS ATIVA". Conferir no dash: Derm CPS T09 em 26/11 volta a 32 slots (com a regra: 28).
+   Atalho (usado em 23/11/2026): n8n, workflow `RDDWtJw1m7cuhuTn` ("NPS-PACIENTE - Disparo GitHub Actions"), executar o gatilho **"Diario 11:00 BRT"** (ele dispara exatamente esse grupo). Os gatilhos 06:00 (todos) e 08:45 (só csat) não servem para isso. O token local dá 403/Bad credentials.
+3. A rodada leva alguns minutos. Conferir no log da rodada: **não** deve aparecer "ATENCAO -- REGRA TEMPORARIA DE SLOTS CAMPINAS ATIVA". Conferir no dash: Derm CPS T09 em 26/11 volta a 32 slots (com a regra: 28).
 
 ## Onde está no código
 - `pipeline/regra_slots_cps.py` (a regra) + `pipeline/regras_slots_cps.json` (números e interruptor).
