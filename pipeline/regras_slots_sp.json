@@ -1,0 +1,129 @@
+{
+  "ativa": true,
+  "descricao": "REGRA TEMPORARIA de slots so para Sao Paulo (SP). Vale ate o Raul atualizar a view do RDS. Detalhes: REGRA_TEMPORARIA_SLOTS_SAO_PAULO.md",
+  "unidade": "SP",
+  "a_partir_de": "2026-11-23",
+  "turmas_janela_B_10h_20h": [
+    "Dermatologia Cirurgica SP T02",
+    "Dermatologia SP T17",
+    "Dermatologia SP T18",
+    "Dermatologia SP T19",
+    "Dermatologia SP T20",
+    "Dermatologia SP T21",
+    "Dermatologia SP T22",
+    "Dermatologia SP T23",
+    "Dermatologia SP T24",
+    "Endocrinologia SP T04",
+    "Endocrinologia SP T05",
+    "Endocrinologia SP T07",
+    "Nutrologia SP T01",
+    "Nutrologia SP T02",
+    "Oftalmologia SP T06",
+    "Oftalmologia SP T07",
+    "Pediatria de Consultório SP T01",
+    "Psiquiatria SP T05",
+    "Psiquiatria SP T06",
+    "Tricologia SP T03"
+  ],
+  "_janelas": "A = turma 8h-18h (7 horarios de 60 min); B = turma 10h-20h (6 horarios). Turma fora da lista B (inclusive futuras) = A.",
+  "clinicas": [
+    {
+      "especialidade": "Dermatologia Cirurgica",
+      "curso_contem": "Cirurgica",
+      "pac": 3,
+      "horarios_A": 7,
+      "horarios_B": 6
+    },
+    {
+      "especialidade": "Endocrinologia",
+      "turmas": [
+        "Endocrinologia SP T05"
+      ],
+      "reg_dia_fixo": 18
+    },
+    {
+      "especialidade": "Neuropediatria",
+      "reg_dia_fixo": 13
+    },
+    {
+      "especialidade": "Nutrologia",
+      "reg_dia_fixo": 9
+    },
+    {
+      "especialidade": "Oftalmologia",
+      "pac": 4,
+      "horarios_A": 7,
+      "horarios_B": 6
+    },
+    {
+      "especialidade": "Pediatria",
+      "pac": 3,
+      "horarios_A": 7,
+      "horarios_B": 6
+    },
+    {
+      "especialidade": "Psiquiatria",
+      "turmas": [
+        "Psiquiatria SP T02",
+        "Psiquiatria SP T05"
+      ],
+      "pac": 3,
+      "horarios_A": 7,
+      "horarios_B": 6
+    },
+    {
+      "especialidade": "Psiquiatria",
+      "turmas": [
+        "Psiquiatria SP T03"
+      ],
+      "pac": 5,
+      "horarios_A": 7,
+      "horarios_B": 6
+    },
+    {
+      "especialidade": "Psiquiatria Infantil",
+      "pac": 3,
+      "horarios_A": 6,
+      "horarios_B": 6
+    },
+    {
+      "especialidade": "Tricologia",
+      "pac": 3,
+      "horarios_A": 7,
+      "horarios_B": 6
+    }
+  ],
+  "dermatologia": {
+    "curso_exclui": [
+      "Cirurgica",
+      "One"
+    ],
+    "pac_por_horario": 3,
+    "minutos_uteis_A": 420,
+    "minutos_uteis_B": 360,
+    "duracao_por_modulo": {
+      "2": 60,
+      "3": 60,
+      "4": 60,
+      "5": 60,
+      "6": 60,
+      "7": 60,
+      "8": 90,
+      "9": 60,
+      "10": 90,
+      "11": 60,
+      "12": 45,
+      "13": 60,
+      "14": 60,
+      "15": 90,
+      "16": 90,
+      "17": 60,
+      "18": 90,
+      "19": 90
+    },
+    "sem_regra_modulos": [
+      1,
+      20
+    ]
+  }
+}
