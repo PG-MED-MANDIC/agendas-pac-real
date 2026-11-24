@@ -1065,8 +1065,8 @@ function O(){
   document.getElementById('oKB').textContent=below.length;
   document.getElementById('oKBSub').textContent=rows.length?pc(below.length,rows.length)+'% do total ('+(oGroup==='data'?'práticas':'turmas')+')':'—';
   var byCurso={};
-  data.forEach(function(r){var k=r.u+'||'+r.c;if(!byCurso[k])byCurso[k]={u:r.u,c:r.c,s:0,r:0,f:0,x:0,turmas:{}};byCurso[k].s+=r.s;byCurso[k].r+=r.r;byCurso[k].f+=r.f;byCurso[k].x+=r.x;byCurso[k].turmas[r.t]=1;});
-  var cursoRows=Object.values(byCurso).map(function(d){return{u:d.u,c:d.c,nTurmas:Object.keys(d.turmas).length,s:d.s,r:d.r,f:d.f,x:d.x,pF:pc(d.f,d.r+d.f+d.x),pX:pc(d.x,d.r+d.f+d.x),pOc:pc(d.r,d.s),ocioso:Math.max(d.s-d.r,0)};}).filter(function(d){return d.s>0;}).sort(function(a,b){return a.pOc-b.pOc;});
+  data.forEach(function(r){var k=r.u+'||'+r.c;if(!byCurso[k])byCurso[k]={u:r.u,c:r.c,s:0,r:0,f:0,x:0,ap:0,turmas:{}};byCurso[k].ap+=aPas(r);byCurso[k].s+=r.s;byCurso[k].r+=r.r;byCurso[k].f+=r.f;byCurso[k].x+=r.x;byCurso[k].turmas[r.t]=1;});
+  var cursoRows=Object.values(byCurso).map(function(d){return{u:d.u,c:d.c,nTurmas:Object.keys(d.turmas).length,s:d.s,r:d.r,f:d.f,x:d.x,pF:pc(d.f,d.r+d.f+d.ap),pX:pc(d.x,d.r+d.f+d.x),pOc:pc(d.r,d.s),ocioso:Math.max(d.s-d.r,0)};}).filter(function(d){return d.s>0;}).sort(function(a,b){return a.pOc-b.pOc;});
   renderExecSummary(cursoRows,meta);
   var byTurma={};
   data.forEach(function(r){var key=r.c+'||'+r.t;if(!byTurma[key])byTurma[key]={c:r.c,t:r.t,s:0,r:0};byTurma[key].s+=r.s;byTurma[key].r+=r.r;});
@@ -1263,11 +1263,11 @@ function renderOCards(data){
     var chosenKey=modOrder[0];
     modOrder.forEach(function(mk){if(modMap[mk][0].d<=todayISO)chosenKey=mk;});
     var modDates=modMap[chosenKey].slice().sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0;});
-    var sumR=0,sumS=0,sumF=0,sumX=0;
-    modDates.forEach(function(r){sumR+=r.r;sumS+=r.s;sumF+=r.f;sumX+=r.x;});
+    var sumR=0,sumS=0,sumF=0,sumX=0,sumAp=0;
+    modDates.forEach(function(r){sumR+=r.r;sumS+=r.s;sumF+=r.f;sumX+=r.x;sumAp+=aPas(r);});
     var avg=pc(sumR,sumS);
     var occ=sumR+sumF+sumX;
-    var pctF=pc(sumF,occ),pctX=pc(sumX,occ);
+    var pctF=pc(sumF,sumR+sumF+sumAp),pctX=pc(sumX,occ);
     var pts=modDates.map(function(r){return{d:r.d,md:r.md,r:r.r,s:r.s,p:pc(r.r,r.s)};});
     var trend='eq',diff=0;
     if(pts.length>=2){diff=pts[pts.length-1].p-pts[0].p;trend=diff>2?'up':diff<-2?'down':'eq';}
