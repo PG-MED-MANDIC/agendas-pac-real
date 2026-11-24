@@ -564,7 +564,7 @@ table.pl-t td.b{font-weight:700;color:var(--navy);}
   <div class="main">
     <div class="kgrid">
       <div class="kcard r"><div class="klbl">Total Realizados</div><div class="kval" id="rKR">—</div><div class="kpct" id="rKRP">—</div><div class="ksub">sobre realizados + faltas + agendados</div></div>
-      <div class="kcard f"><div class="klbl">Total No-show</div><div class="kval" id="rKF">—</div><div class="kpct" id="rKFP">—</div><div class="ksub">da agenda total</div></div>
+      <div class="kcard f"><div class="klbl">Total No-show</div><div class="kval" id="rKF">—</div><div class="kpct" id="rKFP">—</div><div class="ksub">da agenda já ocorrida</div></div>
       <div class="kcard x"><div class="klbl">Total Cancelados</div><div class="kval" id="rKX">—</div><div class="kpct" id="rKXP">—</div><div class="ksub">da agenda total</div></div>
       <div class="kcard a"><div class="klbl">Total Agendados</div><div class="kval" id="rKA">—</div><div class="kpct" id="rKAP">—</div><div class="ksub">consultas futuras</div></div>
     </div>
@@ -1376,21 +1376,21 @@ function G(){
   document.getElementById('gKR').textContent=fn(totR);document.getElementById('gKF').textContent=fn(totF);
   document.getElementById('gKX').textContent=fn(totX);document.getElementById('gKA').textContent=fn(totA);
   document.getElementById('gKRP').textContent=pc(totR,totRB)+'% de realização';
-  document.getElementById('gKFP').textContent=pc(totF,totAg)+'% de falta';
+  document.getElementById('gKFP').textContent=pc(totF,nsBase(data))+'% de falta';
   document.getElementById('gKXP').textContent=pc(totX,totAg)+'% cancelado';
   document.getElementById('gKAP').textContent=pc(totA,totAg)+'% do total';
-  var bC={};data.forEach(function(r){if(!bC[r.c])bC[r.c]={r:0,f:0,x:0,a:0};bC[r.c].r+=r.r;bC[r.c].f+=r.f;bC[r.c].x+=r.x;bC[r.c].a+=r.a;});
+  var bC={};data.forEach(function(r){if(!bC[r.c])bC[r.c]={r:0,f:0,x:0,a:0};bC[r.c].r+=r.r;bC[r.c].f+=r.f;bC[r.c].x+=r.x;bC[r.c].a+=r.a;bC[r.c].ap=(bC[r.c].ap||0)+aPas(r);});
   var cursos=Object.keys(bC).sort(function(a,b){return bC[b].r-bC[a].r;});
   dc('gBar');CH['gBar']=new Chart(document.getElementById('gBar'),{type:'bar',data:{labels:cursos,datasets:[{data:cursos.map(function(c){return bC[c].r;}),backgroundColor:cursos.map(function(c){return CC[c]||'#1A2459';}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
   dc('gDonut');CH['gDonut']=new Chart(document.getElementById('gDonut'),{type:'doughnut',data:{labels:['Realizado','Falta','Cancelado','Agendado'],datasets:[{data:[totR,totF,totX,totA],backgroundColor:['#1A2459','#E53E3E','#ED8936','#F5C518'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
-  function gRB(b){return b.r+b.f+b.a;} function gAT(b){return b.r+b.f+b.x+b.a;} /* regra nova: Realizado sem cancelados; Falta/Cancelado sobre agenda total */
+  function gRB(b){return b.r+b.f+b.a;} function gAT(b){return b.r+b.f+b.x+b.a;} function gNS(b){return b.r+b.f+(b.ap||0);} /* regra nova: Realizado sem cancelados; Falta/Cancelado sobre agenda total */
   var sc=Object.keys(bC).sort(function(a,b){return pc(bC[b].r,gRB(bC[b]))-pc(bC[a].r,gRB(bC[a]));});
-  dc('gStk');CH['gStk']=new Chart(document.getElementById('gStk'),{type:'bar',data:{labels:sc,datasets:[{label:'Realizado %',data:sc.map(function(c){return pc(bC[c].r,gRB(bC[c]));}),backgroundColor:'#1A2459',borderRadius:4},{label:'Falta %',data:sc.map(function(c){return pc(bC[c].f,gAT(bC[c]));}),backgroundColor:'#E53E3E',borderRadius:4},{label:'Cancelado %',data:sc.map(function(c){return pc(bC[c].x,gAT(bC[c]));}),backgroundColor:'#ED8936',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:16}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{max:100,ticks:{font:{size:10},color:'#718096',callback:function(v){return v+'%';}},grid:{color:'#F0F4FA'}}}}});
+  dc('gStk');CH['gStk']=new Chart(document.getElementById('gStk'),{type:'bar',data:{labels:sc,datasets:[{label:'Realizado %',data:sc.map(function(c){return pc(bC[c].r,gRB(bC[c]));}),backgroundColor:'#1A2459',borderRadius:4},{label:'Falta %',data:sc.map(function(c){return pc(bC[c].f,gNS(bC[c]));}),backgroundColor:'#E53E3E',borderRadius:4},{label:'Cancelado %',data:sc.map(function(c){return pc(bC[c].x,gAT(bC[c]));}),backgroundColor:'#ED8936',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:16}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{max:100,ticks:{font:{size:10},color:'#718096',callback:function(v){return v+'%';}},grid:{color:'#F0F4FA'}}}}});
   // Trend: aggregate by month (ignore week for trend line)
   var fBase=fG();var bM={};fBase.forEach(function(r){if(!bM[r.m])bM[r.m]={r:0,f:0,x:0,a:0};bM[r.m].r+=r.r;bM[r.m].f+=r.f;bM[r.m].x+=r.x;bM[r.m].a+=r.a;});
   var meses=Object.keys(bM).sort();
   dc('gLine');CH['gLine']=new Chart(document.getElementById('gLine'),{type:'line',data:{labels:meses.map(fm),datasets:[{label:'Realizado',data:meses.map(function(m){return bM[m].r;}),borderColor:'#1A2459',backgroundColor:'rgba(26,36,89,.08)',borderWidth:2.5,pointRadius:3,tension:.3,fill:true},{label:'Falta',data:meses.map(function(m){return bM[m].f;}),borderColor:'#E53E3E',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3,borderDash:[4,3]},{label:'Cancelado',data:meses.map(function(m){return bM[m].x;}),borderColor:'#ED8936',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3,borderDash:[4,3]},{label:'Agendado',data:meses.map(function(m){return bM[m].a;}),borderColor:'#B8940A',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3,borderDash:[2,4]}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:16}}},scales:{x:{ticks:{font:{size:9},color:'#718096',maxRotation:45},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
-  var rd=Object.keys(bC).map(function(c){var b=bC[c],t=gAT(b);return{c:c,r:b.r,pr:pc(b.r,gRB(b)),pf:pc(b.f,t),px:pc(b.x,t)};}).sort(function(a,b){return b.pr-a.pr;});
+  var rd=Object.keys(bC).map(function(c){var b=bC[c],t=gAT(b);return{c:c,r:b.r,pr:pc(b.r,gRB(b)),pf:pc(b.f,gNS(b)),px:pc(b.x,t)};}).sort(function(a,b){return b.pr-a.pr;});
   var gb=document.getElementById('gRank');gb.innerHTML='';
   rd.forEach(function(d,i){var col=CC[d.c]||'#1A2459';gb.innerHTML+='<tr><td class="rnk">'+(i+1)+'</td><td><span class="tag" style="background:'+col+'22;color:'+col+'">'+d.c+'</span></td><td class="bignum">'+fn(d.r)+'</td><td>'+barRow(d.pr,'#1A2459')+'</td><td>'+barRow(d.pf,'#E53E3E')+'</td><td>'+barRow(d.px,'#ED8936')+'</td><td>'+badge(d.pr)+'</td></tr>';});
   // Heatmap axes: week selected? show weeks; else show months
@@ -1438,6 +1438,8 @@ function rkToggle(c){RKC.off[c]=!RKC.off[c];drawRkC();}
 function rkTop(n){RKC.order.forEach(function(c,i){RKC.off[c]=i>=n;});drawRkC();}
 function rkAll(on){Object.keys(RKCOLOR).forEach(function(c){RKC.off[c]=!on;});drawRkC();}
 function toggleRkDD(ev){ev.stopPropagation();var el=document.getElementById('rkDD'),open=el.classList.contains('open');closeYDD();if(!open)el.classList.add('open');}
+function aPas(r){return r.d>hojeISO()?0:r.a;} /* agendado com data ate hoje */
+function nsBase(rows){var t=0;rows.forEach(function(r){t+=r.r+r.f+aPas(r);});return t;} /* base do no-show: realizados+faltas+agendados ja vencidos (sem cancelados e sem futuros) */
 function hojeISO(){var t=new Date();return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);}
 function lastActiveMonth(byMo){var last=0;for(var mo=1;mo<=12;mo++){var v=byMo[mo];if(v&&(v.r+v.f)>0)last=mo;}return last;}
 function drawRkC(){
@@ -1448,7 +1450,7 @@ function drawRkC(){
     yrs[y]=1;
     var o=by[r.c]||(by[r.c]={}),k=y+'|'+mo;
     o[k]=(o[k]||0)+((m!=='a'&&m!=='x'&&r.d>hoje)?0:r[m]);
-    var dn=den[r.c]||(den[r.c]={});dn[k]=(dn[k]||0)+(r.d>hoje?0:(r.r+r.f))+r.a+(m==='r'?0:r.x);
+    var dn=den[r.c]||(den[r.c]={});dn[k]=(dn[k]||0)+(m==='f'?(r.d>hoje?0:r.r+r.f+r.a):(r.d>hoje?0:(r.r+r.f))+r.a+(m==='r'?0:r.x));
     var a=act[y]||(act[y]={}),am=a[mo]||(a[mo]={r:0,f:0,x:0});
     if(r.d<=hoje){am.r+=r.r;am.f+=r.f;am.x+=r.x;}
   });
@@ -1531,7 +1533,7 @@ function yoyBase(){
 /* Mes em andamento (mes de hoje, no ano corrente): ponto vazado + ultimo trecho tracejado */
 /* Texto explicativo dos cards: muda conforme o botao (Realizados/Faltas/Cancelamentos) e o modo (Valores/%) */
 var TXT_V={r:'Realizados = consultas concluídas (status Compareceu ou Atendido) com data até hoje',f:'Faltas = pacientes que faltaram (status Faltou) com data até hoje',x:'Cancelamentos = consultas canceladas (status Cancelado) no mês inteiro, inclusive datas futuras'};
-var TXT_P={r:'% de Realizados = realizados ÷ agenda do mês sem cancelados (realizados + faltas + agendados do mês inteiro)',f:'% de Faltas = faltas ÷ agenda total do mês (realizados + faltas + cancelados + agendados do mês inteiro)',x:'% de Cancelamentos = cancelados ÷ agenda total do mês (realizados + faltas + cancelados + agendados do mês inteiro)'};
+var TXT_P={r:'% de Realizados = realizados ÷ agenda do mês sem cancelados (realizados + faltas + agendados do mês inteiro)',f:'% de Faltas (no-show) = faltas ÷ agenda que já aconteceu até hoje (realizados + faltas + agendados com data até hoje); cancelamentos e agendamentos futuros ficam de fora',x:'% de Cancelamentos = cancelados ÷ agenda total do mês (realizados + faltas + cancelados + agendados do mês inteiro)'};
 var TXT_YOY_P=TXT_P,TXT_RK_P=TXT_P;
 function yoyTexto(filMode){
   var ms=filMode?['r','f','x'].filter(function(k){return YOY.sel[k].length;}):[YOY.metric==='a'?'r':YOY.metric];
@@ -1561,7 +1563,7 @@ function drawYoY(){
   var bar=document.getElementById('yoyYearBar');
   /* Realizado: realizados / (realizados + faltas + agendados do mes inteiro), sem cancelados.
      Faltas e Cancelamentos: / agenda total do mes (realizados + faltas + cancelamentos + agendados). */
-  function pct(v,metric){var den=metric==='r'?v.r+v.f+v.a:v.r+v.f+v.x+v.a;return den?Math.round(v[metric]/den*1000)/10:null;}
+  function pct(v,metric){var den=metric==='r'?v.r+v.f+v.a:(metric==='f'?v.r+v.f+(v.ap||0):v.r+v.f+v.x+v.a);return den?Math.round(v[metric]/den*1000)/10:null;}
   if(!filMode){
     bar.style.display='none';
     var data=fG();
@@ -1569,8 +1571,8 @@ function drawYoY(){
     data.forEach(function(r){
       var y=r.m.slice(0,4),mo=parseInt(r.m.slice(5,7),10);
       if(!byYM[y])byYM[y]={};
-      if(!byYM[y][mo])byYM[y][mo]={r:0,f:0,x:0,a:0};
-      var fut=r.d>hojeY0;if(!fut){byYM[y][mo].r+=r.r;byYM[y][mo].f+=r.f;}byYM[y][mo].x+=r.x;byYM[y][mo].a+=r.a;
+      if(!byYM[y][mo])byYM[y][mo]={r:0,f:0,x:0,a:0,ap:0};
+      var fut=r.d>hojeY0;if(!fut){byYM[y][mo].r+=r.r;byYM[y][mo].f+=r.f;}byYM[y][mo].x+=r.x;byYM[y][mo].a+=r.a;if(!fut)byYM[y][mo].ap+=r.a;
     });
     var years=Object.keys(byYM).sort();
     var metric=YOY.metric;
@@ -1597,8 +1599,8 @@ function drawYoY(){
       yrs[y]=1;
       var o=byU[r.u]||(byU[r.u]={});
       var k=y+'|'+mo;
-      if(!o[k])o[k]={r:0,f:0,x:0,a:0};
-      if(r.d<=hojeF){o[k].r+=r.r;o[k].f+=r.f;}o[k].x+=r.x;o[k].a+=r.a;
+      if(!o[k])o[k]={r:0,f:0,x:0,a:0,ap:0};
+      if(r.d<=hojeF){o[k].r+=r.r;o[k].f+=r.f;}o[k].x+=r.x;o[k].a+=r.a;if(r.d<=hojeF)o[k].ap+=r.a;
       if(r.d<=hojeF){var ty=tot[y]||(tot[y]={}),t=ty[mo]||(ty[mo]={r:0,f:0,x:0});t.r+=r.r;t.f+=r.f;t.x+=r.x;}
     });
     var ylist=Object.keys(yrs).sort();
@@ -1693,18 +1695,18 @@ function T(){
   var dSel=fT(true),dAll=fT(false);
   var totR=0,totF=0,totX=0,totA=0;dSel.forEach(function(r){totR+=r.r;totF+=r.f;totX+=r.x;totA+=r.a;});var totAg=totR+totF+totX+totA,totRB=totR+totF+totA; /* regra nova: Realizado sem cancelados; demais sobre agenda total */
   document.getElementById('tKR').textContent=fn(totR);document.getElementById('tKF').textContent=fn(totF);document.getElementById('tKX').textContent=fn(totX);document.getElementById('tKA').textContent=fn(totA);
-  document.getElementById('tKRP').textContent=pc(totR,totRB)+'% de realização';document.getElementById('tKFP').textContent=pc(totF,totAg)+'% de falta';document.getElementById('tKXP').textContent=pc(totX,totAg)+'% cancelado';document.getElementById('tKAP').textContent=pc(totA,totAg)+'% do total';
-  var bT={};dAll.forEach(function(r){if(!bT[r.t])bT[r.t]={r:0,f:0,x:0,a:0};bT[r.t].r+=r.r;bT[r.t].f+=r.f;bT[r.t].x+=r.x;bT[r.t].a+=r.a;});
+  document.getElementById('tKRP').textContent=pc(totR,totRB)+'% de realização';document.getElementById('tKFP').textContent=pc(totF,nsBase(dSel))+'% de falta';document.getElementById('tKXP').textContent=pc(totX,totAg)+'% cancelado';document.getElementById('tKAP').textContent=pc(totA,totAg)+'% do total';
+  var bT={};dAll.forEach(function(r){if(!bT[r.t])bT[r.t]={r:0,f:0,x:0,a:0};bT[r.t].r+=r.r;bT[r.t].f+=r.f;bT[r.t].x+=r.x;bT[r.t].a+=r.a;bT[r.t].ap=(bT[r.t].ap||0)+aPas(r);});
   var turmas=Object.keys(bT).sort(function(a,b){return+a-+b;});
   var tCols=turmas.map(function(_,i){return TP[i%TP.length];});
   var bgC=turmas.map(function(t,i){return(selT==='all'||t===selT)?tCols[i]:tCols[i]+'55';});
   dc('tBar');CH['tBar']=new Chart(document.getElementById('tBar'),{type:'bar',data:{labels:turmas.map(function(t){return'Turma '+t;}),datasets:[{data:turmas.map(function(t){return bT[t].r;}),backgroundColor:bgC,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
-  dc('tStk');CH['tStk']=new Chart(document.getElementById('tStk'),{type:'bar',data:{labels:turmas.map(function(t){return'Turma '+t;}),datasets:[{label:'Realizado %',data:turmas.map(function(t){var b=bT[t];return pc(b.r,b.r+b.f+b.a);}),backgroundColor:'#1A2459',borderRadius:4},{label:'Falta %',data:turmas.map(function(t){var b=bT[t];return pc(b.f,b.r+b.f+b.x+b.a);}),backgroundColor:'#E53E3E',borderRadius:4},{label:'Cancelado %',data:turmas.map(function(t){var b=bT[t];return pc(b.x,b.r+b.f+b.x+b.a);}),backgroundColor:'#ED8936',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{max:100,ticks:{font:{size:10},color:'#718096',callback:function(v){return v+'%';}},grid:{color:'#F0F4FA'}}}}});
+  dc('tStk');CH['tStk']=new Chart(document.getElementById('tStk'),{type:'bar',data:{labels:turmas.map(function(t){return'Turma '+t;}),datasets:[{label:'Realizado %',data:turmas.map(function(t){var b=bT[t];return pc(b.r,b.r+b.f+b.a);}),backgroundColor:'#1A2459',borderRadius:4},{label:'Falta %',data:turmas.map(function(t){var b=bT[t];return pc(b.f,b.r+b.f+(b.ap||0));}),backgroundColor:'#E53E3E',borderRadius:4},{label:'Cancelado %',data:turmas.map(function(t){var b=bT[t];return pc(b.x,b.r+b.f+b.x+b.a);}),backgroundColor:'#ED8936',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{display:false}},y:{max:100,ticks:{font:{size:10},color:'#718096',callback:function(v){return v+'%';}},grid:{color:'#F0F4FA'}}}}});
   var bM={};dSel.forEach(function(r){if(!bM[r.m])bM[r.m]={r:0,f:0,x:0,a:0};bM[r.m].r+=r.r;bM[r.m].f+=r.f;bM[r.m].x+=r.x;bM[r.m].a+=r.a;});
   var meses=Object.keys(bM).sort();
   document.getElementById('tLineSub').textContent=selT==='all'?c+' — todas as turmas':c+' · Turma '+selT;
   dc('tLine');CH['tLine']=new Chart(document.getElementById('tLine'),{type:'line',data:{labels:meses.map(fm),datasets:[{label:'Realizado',data:meses.map(function(m){return bM[m].r;}),borderColor:'#1A2459',backgroundColor:'rgba(26,36,89,.08)',borderWidth:2.5,pointRadius:3,tension:.3,fill:true},{label:'Falta',data:meses.map(function(m){return bM[m].f;}),borderColor:'#E53E3E',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3,borderDash:[4,3]},{label:'Cancelado',data:meses.map(function(m){return bM[m].x;}),borderColor:'#ED8936',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3,borderDash:[4,3]},{label:'Agendado',data:meses.map(function(m){return bM[m].a;}),borderColor:'#B8940A',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3,borderDash:[2,4]}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:16}}},scales:{x:{ticks:{font:{size:9},color:'#718096',maxRotation:45},grid:{display:false}},y:{ticks:{font:{size:10},color:'#718096'},grid:{color:'#F0F4FA'}}}}});
-  var rd=turmas.map(function(t,i){var b=bT[t],tot=b.r+b.f+b.x+b.a;return{t:t,r:b.r,pr:pc(b.r,b.r+b.f+b.a),pf:pc(b.f,tot),px:pc(b.x,tot),col:tCols[i]};}).sort(function(a,b){return b.pr-a.pr;});
+  var rd=turmas.map(function(t,i){var b=bT[t],tot=b.r+b.f+b.x+b.a;return{t:t,r:b.r,pr:pc(b.r,b.r+b.f+b.a),pf:pc(b.f,b.r+b.f+(b.ap||0)),px:pc(b.x,tot),col:tCols[i]};}).sort(function(a,b){return b.pr-a.pr;});
   var tb=document.getElementById('tRank');tb.innerHTML='';
   rd.forEach(function(d,i){var isSel=selT!=='all'&&d.t===selT;tb.innerHTML+='<tr style="'+(isSel?'background:#F0F4FF;':'')+'cursor:pointer" onclick="clickRankT(\''+d.t+'\')"><td class="rnk">'+(i+1)+'</td><td><span class="tag" style="background:'+d.col+'22;color:'+d.col+'">Turma '+d.t+'</span></td><td class="bignum">'+fn(d.r)+'</td><td>'+barRow(d.pr,'#1A2459')+'</td><td>'+barRow(d.pf,'#E53E3E')+'</td><td>'+barRow(d.px,'#ED8936')+'</td><td>'+badge(d.pr)+'</td></tr>';});
   var hD={};dAll.forEach(function(r){if(!hD[r.t])hD[r.t]={};if(!hD[r.t][r.m])hD[r.t][r.m]=0;hD[r.t][r.m]+=r.r;});
@@ -1739,12 +1741,12 @@ function R(){
   document.getElementById('rKR').textContent=fn(totR);document.getElementById('rKF').textContent=fn(totF);
   document.getElementById('rKX').textContent=fn(totX);document.getElementById('rKA').textContent=fn(totA);
   document.getElementById('rKRP').textContent=pc(totR,totRB)+'% de realização';
-  document.getElementById('rKFP').textContent=pc(totF,totAg)+'% no-show';
+  document.getElementById('rKFP').textContent=pc(totF,nsBase(data))+'% no-show';
   document.getElementById('rKXP').textContent=pc(totX,totAg)+'% cancelado';
   document.getElementById('rKAP').textContent=pc(totA,totAg)+'% do total';
   var agg={};
-  data.forEach(function(r){var key=rGroup==='turma'?r.c+'||'+r.t:r.c;if(!agg[key])agg[key]={curso:r.c,turma:r.t,r:0,f:0,x:0,a:0};agg[key].r+=r.r;agg[key].f+=r.f;agg[key].x+=r.x;agg[key].a+=r.a;});
-  var rows=Object.values(agg).map(function(d){var tot=d.r+d.f+d.x+d.a;return{curso:d.curso,turma:d.turma,r:d.r,f:d.f,x:d.x,a:d.a,tot:tot,pr:pc(d.r,d.r+d.f+d.a),pf:pc(d.f,tot),px:pc(d.x,tot),pa:pc(d.a,tot)};});
+  data.forEach(function(r){var key=rGroup==='turma'?r.c+'||'+r.t:r.c;if(!agg[key])agg[key]={curso:r.c,turma:r.t,r:0,f:0,x:0,a:0,ap:0};agg[key].r+=r.r;agg[key].f+=r.f;agg[key].x+=r.x;agg[key].a+=r.a;agg[key].ap+=aPas(r);});
+  var rows=Object.values(agg).map(function(d){var tot=d.r+d.f+d.x+d.a;return{curso:d.curso,turma:d.turma,r:d.r,f:d.f,x:d.x,a:d.a,tot:tot,pr:pc(d.r,d.r+d.f+d.a),pf:pc(d.f,d.r+d.f+d.ap),px:pc(d.x,tot),pa:pc(d.a,tot)};});
   var maxR=Math.max.apply(null,rows.map(function(d){return d.r;}).concat([1]));
   var maxF=Math.max.apply(null,rows.map(function(d){return d.f;}).concat([1]));
   var maxX=Math.max.apply(null,rows.map(function(d){return d.x;}).concat([1]));
