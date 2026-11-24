@@ -1,0 +1,45 @@
+{
+  "ativa": true,
+  "descricao": "REGRA TEMPORARIA de slots so para Brasilia (BSB). Vale ate o Raul atualizar a view do RDS. Detalhes: REGRA_TEMPORARIA_SLOTS_BRASILIA.md",
+  "unidade": "BSB",
+  "a_partir_de": "2026-11-23",
+  "clinicas": {
+    "Endocrinologia": {
+      "reg_dia": 18
+    },
+    "Oftalmologia": {
+      "reg_dia": 18
+    },
+    "Psiquiatria": {
+      "reg_dia": 18
+    }
+  },
+  "dermatologia": {
+    "pac_por_horario": 3,
+    "minutos_uteis": 420,
+    "duracao_por_modulo": {
+      "2": 60,
+      "3": 60,
+      "4": 60,
+      "5": 60,
+      "6": 60,
+      "7": 45,
+      "8": 90,
+      "9": 60,
+      "10": 90,
+      "11": 45,
+      "12": 45,
+      "13": 60,
+      "14": 60,
+      "15": 90,
+      "16": 90,
+      "17": 60,
+      "18": 90,
+      "19": 90
+    },
+    "sem_regra_modulos": [
+      1,
+      20
+    ]
+  }
+}

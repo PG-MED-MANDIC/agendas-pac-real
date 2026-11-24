@@ -209,6 +209,9 @@ def _slots_do_rds(json_path: Path, df_consultaja: pd.DataFrame, warnings: list[s
     # REGRA TEMPORARIA Campinas (desligar: "ativa": false em regras_slots_cps.json)
     from regra_slots_cps import aplicar as _regra_cps
     linhas = _regra_cps(dados.get("linhas", []), warnings)
+    # REGRA TEMPORARIA Brasilia (desligar: "ativa": false em regras_slots_bsb.json)
+    from regra_slots_bsb import aplicar as _regra_bsb
+    linhas = _regra_bsb(linhas, warnings)
 
     for r in linhas:
         data_iso = str(r.get("data_pratica") or "")[:10]
